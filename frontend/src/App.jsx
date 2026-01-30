@@ -8,6 +8,7 @@ import HistoryModal from './components/HistoryModal';
 import ExportButton from './components/ExportButton';
 import NotificationBadge from './components/NotificationBadge';
 import WhatsAppButton from './components/WhatsAppButton';
+import KitnetSkeleton from './components/KitnetSkeleton';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -52,7 +53,12 @@ function App() {
       const data = await response.json();
       setKitnets(data);
     } catch (err) {
-      setError(err.message);
+      // Better error message for connection issues
+      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+        setError('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -288,10 +294,16 @@ function App() {
           </div>
         )}
 
-        {/* Loading State */}
+        {/* Loading State - Skeleton */}
         {loading && (
-          <div className="flex items-center justify-center py-20" role="status">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" aria-hidden="true" />
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            role="status"
+            aria-label="Carregando kitnets"
+          >
+            {[...Array(8)].map((_, i) => (
+              <KitnetSkeleton key={i} />
+            ))}
             <span className="sr-only">Carregando kitnets...</span>
           </div>
         )}

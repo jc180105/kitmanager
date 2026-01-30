@@ -25,8 +25,6 @@ Sistema completo para gerenciamento de kitnets para aluguel.
 ```bash
 cd backend
 npm install
-cp .env.example .env
-# Configure as variáveis de ambiente
 npm start
 ```
 
@@ -37,27 +35,10 @@ npm install
 npm run dev
 ```
 
-## 🔧 Variáveis de Ambiente
+## 📱 Acesso
 
-### Backend (.env)
-```
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=usuario
-DB_PASSWORD=senha
-DB_NAME=imobiliaria
-PORT=3001
-```
-
-### Frontend (.env)
-```
-VITE_API_URL=http://localhost:3001
-```
-
-## 📱 Deploy
-
-O frontend pode ser deployado no Vercel.
-O backend precisa de um servidor com Node.js e PostgreSQL.
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3001
 
 ## 📄 License
 
