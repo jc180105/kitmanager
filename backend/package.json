@@ -1,8 +1,11 @@
 {
-  "name": "kitnets-backend",
+  "name": "kitmanager-backend",
   "version": "1.0.0",
   "description": "API para gerenciamento de kitnets",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"

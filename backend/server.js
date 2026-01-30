@@ -24,13 +24,19 @@ app.use(limiter);
 // ===================
 // DATABASE
 // ===================
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT) || 5433,
-  user: process.env.DB_USER || 'usuario',
-  password: process.env.DB_PASSWORD || 'senha_segura',
-  database: process.env.DB_NAME || 'imobiliaria'
-});
+// Support both DATABASE_URL (Railway/production) and individual vars (local)
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  })
+  : new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT) || 5433,
+    user: process.env.DB_USER || 'usuario',
+    password: process.env.DB_PASSWORD || 'senha_segura',
+    database: process.env.DB_NAME || 'imobiliaria'
+  });
 
 // Test connection
 pool.connect((err, client, release) => {
