@@ -1,0 +1,122 @@
+import { Pencil, User, Loader2, MessageCircle } from 'lucide-react';
+
+function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant }) {
+    const isLivre = kitnet.status === 'livre';
+    const isLoading = kitnet._loading;
+
+    // Format currency
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value);
+    };
+
+    return (
+        <article
+            className={`kitnet-card relative bg-slate-800/50 backdrop-blur border-2 rounded-2xl p-5 ${isLivre
+                ? 'border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                : 'border-red-500/50 shadow-lg shadow-red-500/10'
+                }`}
+            role="listitem"
+            aria-label={`Kitnet ${kitnet.numero}, ${isLivre ? 'livre' : 'alugada'}, ${formatCurrency(kitnet.valor)}`}
+        >
+            {/* Status Badge */}
+            <div
+                className={`absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs font-semibold ${isLivre ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                    }`}
+                aria-hidden="true"
+            >
+                {isLivre ? 'LIVRE' : 'ALUGADA'}
+            </div>
+
+            {/* Kitnet Number and Price */}
+            <div className="flex items-center gap-3 mb-4">
+                <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold ${isLivre ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                        }`}
+                >
+                    {String(kitnet.numero).padStart(2, '0')}
+                </div>
+                <div>
+                    <h3 className="text-white font-semibold">Kitnet {kitnet.numero}</h3>
+                    <p className={`text-lg font-bold ${isLivre ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatCurrency(kitnet.valor)}
+                    </p>
+                </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-slate-400 text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
+                {kitnet.descricao || 'Sem descrição'}
+            </p>
+
+            {/* Tenant Info (if rented) */}
+            {!isLivre && kitnet.inquilino_nome && (
+                <div className="mb-3 p-2 bg-slate-700/30 rounded-lg">
+                    <p className="text-xs text-slate-400">Inquilino:</p>
+                    <p className="text-sm text-white font-medium truncate">{kitnet.inquilino_nome}</p>
+                    {kitnet.dia_vencimento && (
+                        <p className="text-xs text-slate-400">Vencimento: dia {kitnet.dia_vencimento}</p>
+                    )}
+                </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between gap-2">
+                {/* Toggle Switch */}
+                <button
+                    onClick={onToggle}
+                    disabled={isLoading}
+                    className={`toggle-switch ${isLivre ? 'bg-emerald-500' : 'bg-red-500'} ${isLoading ? 'opacity-50 cursor-wait' : ''
+                        }`}
+                    data-checked={isLivre}
+                    aria-label={isLivre ? 'Marcar como alugada' : 'Marcar como livre'}
+                    aria-pressed={!isLivre}
+                >
+                    {isLoading && (
+                        <Loader2 className="w-4 h-4 text-white animate-spin absolute left-1/2 -translate-x-1/2" />
+                    )}
+                </button>
+
+                <div className="flex gap-2">
+                    {/* WhatsApp Button (only when rented with phone) */}
+                    {!isLivre && kitnet.inquilino_telefone && (
+                        <a
+                            href={`https://wa.me/55${kitnet.inquilino_telefone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors text-sm"
+                            aria-label="Enviar WhatsApp"
+                        >
+                            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                        </a>
+                    )}
+
+                    {/* Tenant Button (only when rented) */}
+                    {!isLivre && (
+                        <button
+                            onClick={onEditTenant}
+                            className="flex items-center gap-1 px-2 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors text-sm"
+                            aria-label="Editar dados do inquilino"
+                        >
+                            <User className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                    )}
+
+                    {/* Edit Button */}
+                    <button
+                        onClick={onEdit}
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm"
+                        aria-label="Editar valor e descrição"
+                    >
+                        <Pencil className="w-4 h-4" aria-hidden="true" />
+                        <span className="hidden sm:inline">Editar</span>
+                    </button>
+                </div>
+            </div>
+        </article>
+    );
+}
+
+export default KitnetCard;
