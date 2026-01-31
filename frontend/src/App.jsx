@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database } from 'lucide-react';
+import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database, Menu, ChevronDown } from 'lucide-react';
 import KitnetCard from './components/KitnetCard';
 import EditModal from './components/EditModal';
 import TenantModal from './components/TenantModal';
@@ -20,6 +20,7 @@ function App() {
   const [tenantKitnet, setTenantKitnet] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +54,6 @@ function App() {
       const data = await response.json();
       setKitnets(data);
     } catch (err) {
-      // Better error message for connection issues
       if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
         setError('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
       } else {
@@ -87,7 +87,6 @@ function App() {
   const toggleStatus = async (id, newStatus) => {
     setConfirmDialog(null);
 
-    // Optimistic update
     setKitnets(prev => prev.map(k =>
       k.id === id ? { ...k, status: newStatus, _loading: true } : k
     ));
@@ -105,17 +104,15 @@ function App() {
       const updatedKitnet = await response.json();
       setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
 
-      // If marked as rented, open tenant modal
       if (newStatus === 'alugada') {
         setTenantKitnet(updatedKitnet);
       }
     } catch (err) {
       setError(err.message);
-      fetchKitnets(); // Rollback
+      fetchKitnets();
     }
   };
 
-  // Update details
   const updateDetails = async (id, valor, descricao) => {
     try {
       const response = await fetch(`${API_URL}/kitnets/${id}/detalhes`, {
@@ -137,7 +134,6 @@ function App() {
     }
   };
 
-  // Update tenant
   const updateTenant = async (id, tenantData) => {
     const response = await fetch(`${API_URL}/kitnets/${id}/inquilino`, {
       method: 'PUT',
@@ -155,7 +151,6 @@ function App() {
     setTenantKitnet(null);
   };
 
-  // Clear error after 5 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(null), 5000);
@@ -170,20 +165,23 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-lg border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      {/* Header - Mobile Optimized */}
+      <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-lg border-b border-slate-700/50">
+        <div className="px-4 py-3">
+          {/* Top Row - Logo and Menu */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20">
-                <Home className="w-6 h-6 text-white" aria-hidden="true" />
+                <Home className="w-5 h-5 text-white" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Kitnets Dashboard</h1>
-                <p className="text-sm text-slate-400">Gerenciamento de unidades</p>
+                <h1 className="text-lg font-bold text-white leading-tight">Kitnets</h1>
+                <p className="text-xs text-slate-400 hidden sm:block">Gerenciamento</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-2">
               <NotificationBadge />
               <WhatsAppButton kitnets={kitnets} />
               <ExportButton kitnets={kitnets} />
@@ -195,7 +193,7 @@ function App() {
                 aria-label="Baixar backup"
               >
                 <Database className="w-4 h-4" aria-hidden="true" />
-                <span className="hidden lg:inline">Backup</span>
+                <span>Backup</span>
               </a>
               <button
                 onClick={() => setShowHistory(true)}
@@ -203,40 +201,103 @@ function App() {
                 aria-label="Ver histórico de alterações"
               >
                 <History className="w-4 h-4" aria-hidden="true" />
-                <span className="hidden lg:inline">Histórico</span>
+                <span>Histórico</span>
               </button>
               <button
                 onClick={fetchKitnets}
                 disabled={loading}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
                 aria-label="Atualizar lista de kitnets"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
-                <span className="hidden lg:inline">Atualizar</span>
+                <span>Atualizar</span>
+              </button>
+            </div>
+
+            {/* Mobile Actions Row */}
+            <div className="flex md:hidden items-center gap-1">
+              <NotificationBadge />
+              <button
+                onClick={fetchKitnets}
+                disabled={loading}
+                className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                aria-label="Atualizar"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+              </button>
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="p-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                aria-label="Menu"
+              >
+                <Menu className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {showMobileMenu && (
+            <div className="md:hidden mt-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700/50 animate-fade-in">
+              <div className="grid grid-cols-2 gap-2">
+                <WhatsAppButton kitnets={kitnets} />
+                <ExportButton kitnets={kitnets} />
+                <a
+                  href={`${API_URL}/backup`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <Database className="w-4 h-4" aria-hidden="true" />
+                  <span>Backup</span>
+                </a>
+                <button
+                  onClick={() => { setShowHistory(true); setShowMobileMenu(false); }}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                >
+                  <History className="w-4 h-4" aria-hidden="true" />
+                  <span>Histórico</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="px-4 py-4">
+        {/* Stats Bar - Mobile Optimized */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+          <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-3 sm:p-4 text-center">
+            <p className="text-slate-400 text-xs sm:text-sm">Total</p>
+            <p className="text-xl sm:text-2xl font-bold text-white">{totalKitnets}</p>
+          </div>
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 sm:p-4 text-center">
+            <p className="text-emerald-400 text-xs sm:text-sm">Livres</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-400">{livres}</p>
+          </div>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4 text-center">
+            <p className="text-red-400 text-xs sm:text-sm">Alugadas</p>
+            <p className="text-xl sm:text-2xl font-bold text-red-400">{alugadas}</p>
+          </div>
+        </div>
+
+        {/* Search and Filters - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" aria-hidden="true" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
             <input
               type="text"
-              placeholder="Buscar por número ou descrição..."
+              placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full pl-9 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
               aria-label="Buscar kitnets"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-700 rounded"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-700 rounded"
                 aria-label="Limpar busca"
               >
                 <X className="w-4 h-4 text-slate-400" />
@@ -245,48 +306,32 @@ function App() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-slate-400" aria-hidden="true" />
+          <div className="relative">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full sm:w-auto pl-3 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-sm"
               aria-label="Filtrar por status"
             >
               <option value="todos">Todos</option>
               <option value="livre">Livres</option>
               <option value="alugada">Alugadas</option>
             </select>
-          </div>
-        </div>
-
-        {/* Stats Bar */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-4">
-            <p className="text-slate-400 text-sm">Total</p>
-            <p className="text-2xl font-bold text-white">{totalKitnets}</p>
-          </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-            <p className="text-emerald-400 text-sm">Livres</p>
-            <p className="text-2xl font-bold text-emerald-400">{livres}</p>
-          </div>
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-            <p className="text-red-400 text-sm">Alugadas</p>
-            <p className="text-2xl font-bold text-red-400">{alugadas}</p>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
         </div>
 
         {/* Error Message */}
         {error && (
           <div
-            className="flex items-center gap-2 p-4 mb-6 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400"
+            className="flex items-start gap-2 p-3 mb-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm"
             role="alert"
           >
-            <AlertCircle className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            <p>{error}</p>
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="flex-1">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="ml-auto p-1 hover:bg-red-500/20 rounded"
+              className="p-1 hover:bg-red-500/20 rounded flex-shrink-0"
               aria-label="Fechar mensagem de erro"
             >
               <X className="w-4 h-4" />
@@ -297,7 +342,7 @@ function App() {
         {/* Loading State - Skeleton */}
         {loading && (
           <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
             role="status"
             aria-label="Carregando kitnets"
           >
@@ -311,7 +356,7 @@ function App() {
         {/* Kitnets Grid */}
         {!loading && (
           <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
             role="list"
             aria-label="Lista de kitnets"
           >
@@ -329,11 +374,11 @@ function App() {
 
         {/* Empty State */}
         {!loading && kitnets.length === 0 && !error && (
-          <div className="text-center py-20">
-            <Home className="w-16 h-16 text-slate-600 mx-auto mb-4" aria-hidden="true" />
-            <p className="text-slate-400">
+          <div className="text-center py-16">
+            <Home className="w-12 h-12 text-slate-600 mx-auto mb-4" aria-hidden="true" />
+            <p className="text-slate-400 text-sm">
               {searchTerm || statusFilter !== 'todos'
-                ? 'Nenhuma kitnet encontrada com esses filtros'
+                ? 'Nenhuma kitnet encontrada'
                 : 'Nenhuma kitnet cadastrada'}
             </p>
           </div>
