@@ -43,7 +43,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^http:\/\/localhost:3001\/kitnets/,
+            urlPattern: /^https:\/\/kitmanager-production\.up\.railway\.app\/.*/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',

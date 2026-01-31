@@ -188,7 +188,7 @@ function App() {
               <WhatsAppButton kitnets={kitnets} />
               <ExportButton kitnets={kitnets} />
               <a
-                href="http://localhost:3001/backup"
+                href={`${API_URL}/backup`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
