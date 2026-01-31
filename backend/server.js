@@ -38,14 +38,86 @@ const pool = process.env.DATABASE_URL
     database: process.env.DB_NAME || 'imobiliaria'
   });
 
-// Test connection
+// Initialize database tables
+async function initializeDatabase() {
+  try {
+    // Create kitnets table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS kitnets (
+        id SERIAL PRIMARY KEY,
+        numero INTEGER UNIQUE NOT NULL,
+        status VARCHAR(20) DEFAULT 'livre',
+        valor DECIMAL(10,2) DEFAULT 0,
+        descricao TEXT,
+        inquilino_nome VARCHAR(255),
+        inquilino_telefone VARCHAR(50),
+        data_entrada DATE,
+        dia_vencimento INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create historico table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS historico_kitnets (
+        id SERIAL PRIMARY KEY,
+        kitnet_id INTEGER,
+        kitnet_numero INTEGER,
+        acao VARCHAR(50),
+        status_anterior VARCHAR(20),
+        status_novo VARCHAR(20),
+        data_alteracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default kitnets if table is empty
+    const count = await pool.query('SELECT COUNT(*) FROM kitnets');
+    if (parseInt(count.rows[0].count) === 0) {
+      console.log('📦 Criando kitnets padrão...');
+      for (let i = 1; i <= 20; i++) {
+        await pool.query(
+          'INSERT INTO kitnets (numero, status, valor) VALUES ($1, $2, $3)',
+          [i, 'livre', 500.00]
+        );
+      }
+      console.log('✅ 20 kitnets criadas com sucesso!');
+    }
+
+    console.log('✅ Banco de dados inicializado com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao inicializar banco de dados:', error.message);
+  }
+}
+
+// Test connection and initialize
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌ Erro ao conectar no PostgreSQL:', err.message);
   } else {
     console.log('✅ Conectado ao PostgreSQL');
     release();
+    initializeDatabase();
   }
+});
+
+// ===================
+// HEALTH CHECK
+// ===================
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(500).json({ status: 'error', database: 'disconnected', error: error.message });
+  }
+});
+
+app.get('/', (req, res) => {
+  res.json({
+    message: 'KitManager API',
+    version: '1.0.0',
+    endpoints: ['/kitnets', '/historico', '/api/health']
+  });
 });
 
 // ===================
