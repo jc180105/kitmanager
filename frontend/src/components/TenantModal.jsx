@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, UserPlus, Phone, Calendar, CreditCard } from 'lucide-react';
+import { X, UserPlus, Phone, Calendar, CreditCard, FileText } from 'lucide-react';
+import { generateContract } from '../utils/generateContract';
 
 // Format phone number as (XX) XXXXX-XXXX
 const formatPhone = (value) => {
@@ -45,6 +46,8 @@ function TenantModal({ kitnet, onSave, onClose }) {
     const [formData, setFormData] = useState({
         inquilino_nome: kitnet.inquilino_nome || '',
         inquilino_telefone: kitnet.inquilino_telefone || '',
+        inquilino_cpf: kitnet.inquilino_cpf || '',
+        inquilino_rg: kitnet.inquilino_rg || '',
         data_entrada: formatDateForInput(kitnet.data_entrada),
         dia_vencimento: kitnet.dia_vencimento || '',
     });
@@ -82,6 +85,8 @@ function TenantModal({ kitnet, onSave, onClose }) {
             await onSave(kitnet.id, {
                 inquilino_nome: formData.inquilino_nome.trim(),
                 inquilino_telefone: formData.inquilino_telefone || null,
+                inquilino_cpf: formData.inquilino_cpf || null,
+                inquilino_rg: formData.inquilino_rg || null,
                 data_entrada: formData.data_entrada || null,
                 dia_vencimento: formData.dia_vencimento ? parseInt(formData.dia_vencimento) : null,
             });
@@ -171,6 +176,38 @@ function TenantModal({ kitnet, onSave, onClose }) {
                             <p className="mt-1 text-xs text-slate-500">Formata automaticamente</p>
                         </div>
 
+                        {/* CPF e RG (Grid) */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="inquilino_cpf" className="block text-sm font-medium text-slate-300 mb-2">
+                                    CPF
+                                </label>
+                                <input
+                                    type="text"
+                                    id="inquilino_cpf"
+                                    name="inquilino_cpf"
+                                    value={formData.inquilino_cpf}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="000.000.000-00"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="inquilino_rg" className="block text-sm font-medium text-slate-300 mb-2">
+                                    RG
+                                </label>
+                                <input
+                                    type="text"
+                                    id="inquilino_rg"
+                                    name="inquilino_rg"
+                                    value={formData.inquilino_rg}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="0.000.000"
+                                />
+                            </div>
+                        </div>
+
                         {/* Data de Entrada */}
                         <div>
                             <label htmlFor="data_entrada" className="block text-sm font-medium text-slate-300 mb-2">
@@ -207,21 +244,32 @@ function TenantModal({ kitnet, onSave, onClose }) {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex gap-3 pt-2">
+                        <div className="pt-2">
                             <button
                                 type="button"
-                                onClick={onClose}
-                                className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors font-medium"
+                                onClick={() => generateContract({ ...kitnet, ...formData })}
+                                className="w-full mb-3 flex items-center justify-center gap-2 px-4 py-3 bg-slate-700/30 hover:bg-slate-700/50 border border-slate-600 border-dashed text-slate-300 hover:text-white rounded-xl transition-colors font-medium group"
                             >
-                                Cancelar
+                                <FileText className="w-5 h-5 text-slate-400 group-hover:text-blue-400" />
+                                Gerar Contrato (PDF)
                             </button>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all font-medium disabled:opacity-50"
-                            >
-                                {saving ? 'Salvando...' : 'Salvar'}
-                            </button>
+
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors font-medium"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all font-medium disabled:opacity-50"
+                                >
+                                    {saving ? 'Salvando...' : 'Salvar'}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

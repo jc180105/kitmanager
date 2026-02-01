@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Calendar, DollarSign, Loader2 } from 'lucide-react';
+import { X, Calendar, DollarSign, Loader2, Trash2 } from 'lucide-react';
 
 function PaymentHistoryModal({ kitnet, onClose }) {
     const [history, setHistory] = useState([]);
@@ -19,6 +19,26 @@ function PaymentHistoryModal({ kitnet, onClose }) {
             console.error('Erro ao buscar histórico:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('Tem certeza que deseja excluir este registro de pagamento?')) return;
+
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${API_URL}/pagamentos/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setHistory(prev => prev.filter(item => item.id !== id));
+            } else {
+                console.error('Erro ao excluir');
+                alert('Erro ao excluir pagamento. Verifique se o backend foi atualizado.');
+            }
+        } catch (error) {
+            console.error('Erro ao excluir:', error);
         }
     };
 
@@ -93,11 +113,20 @@ function PaymentHistoryModal({ kitnet, onClose }) {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-slate-400">Pago em</p>
-                                        <p className="text-sm text-slate-300">
-                                            {formatDate(record.data_pagamento, true)}
-                                        </p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <p className="text-xs text-slate-400">Pago em</p>
+                                            <p className="text-sm text-slate-300">
+                                                {formatDate(record.data_pagamento, true)}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDelete(record.id)}
+                                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            title="Excluir pagamento"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             ))}

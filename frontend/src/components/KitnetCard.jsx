@@ -1,6 +1,6 @@
 import { Pencil, User, Loader2, MessageCircle, DollarSign, History } from 'lucide-react';
 
-function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, onShowHistory }) {
+function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, onShowHistory, onSelect }) {
     const isLivre = kitnet.status === 'livre';
     const isLoading = kitnet._loading;
     const isPago = kitnet.pago_mes;
@@ -62,37 +62,40 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
                 </div>
             )}
 
-            {/* Kitnet Number and Price */}
-            <div className="flex items-center gap-3 mb-4">
-                <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold ${isLivre ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                        }`}
-                >
-                    {String(kitnet.numero).padStart(2, '0')}
+            {/* Clickable Area for Details */}
+            <div onClick={onSelect} className="cursor-pointer group">
+                {/* Kitnet Number and Price */}
+                <div className="flex items-center gap-3 mb-4">
+                    <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold transition-transform group-hover:scale-110 ${isLivre ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                            }`}
+                    >
+                        {String(kitnet.numero).padStart(2, '0')}
+                    </div>
+                    <div>
+                        <h3 className="text-white font-semibold group-hover:text-blue-400 transition-colors">Kitnet {kitnet.numero}</h3>
+                        <p className={`text-lg font-bold ${isLivre ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {formatCurrency(kitnet.valor)}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="text-white font-semibold">Kitnet {kitnet.numero}</h3>
-                    <p className={`text-lg font-bold ${isLivre ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {formatCurrency(kitnet.valor)}
-                    </p>
-                </div>
+
+                {/* Description */}
+                <p className="text-slate-400 text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
+                    {kitnet.descricao || 'Sem descrição'}
+                </p>
+
+                {/* Tenant Info (if rented) */}
+                {!isLivre && kitnet.inquilino_nome && (
+                    <div className="mb-3 p-2 bg-slate-700/30 rounded-lg border border-transparent group-hover:border-slate-600 transition-colors">
+                        <p className="text-xs text-slate-400">Inquilino:</p>
+                        <p className="text-sm text-white font-medium truncate">{kitnet.inquilino_nome}</p>
+                        {kitnet.dia_vencimento && (
+                            <p className="text-xs text-slate-400">Vencimento: dia {kitnet.dia_vencimento}</p>
+                        )}
+                    </div>
+                )}
             </div>
-
-            {/* Description */}
-            <p className="text-slate-400 text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
-                {kitnet.descricao || 'Sem descrição'}
-            </p>
-
-            {/* Tenant Info (if rented) */}
-            {!isLivre && kitnet.inquilino_nome && (
-                <div className="mb-3 p-2 bg-slate-700/30 rounded-lg">
-                    <p className="text-xs text-slate-400">Inquilino:</p>
-                    <p className="text-sm text-white font-medium truncate">{kitnet.inquilino_nome}</p>
-                    {kitnet.dia_vencimento && (
-                        <p className="text-xs text-slate-400">Vencimento: dia {kitnet.dia_vencimento}</p>
-                    )}
-                </div>
-            )}
 
             {/* Actions */}
             <div className="flex items-center justify-between gap-2">

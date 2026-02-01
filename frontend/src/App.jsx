@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database, Menu, ChevronDown } from 'lucide-react';
+import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database, Menu, ChevronDown, BarChart3 } from 'lucide-react';
 import KitnetCard from './components/KitnetCard';
 import EditModal from './components/EditModal';
 import TenantModal from './components/TenantModal';
@@ -10,6 +10,8 @@ import ExportButton from './components/ExportButton';
 import NotificationBadge from './components/NotificationBadge';
 import WhatsAppButton from './components/WhatsAppButton';
 import KitnetSkeleton from './components/KitnetSkeleton';
+import DashboardModal from './components/DashboardModal';
+import KitnetDetailsModal from './components/KitnetDetailsModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -20,8 +22,10 @@ function App() {
   const [editingKitnet, setEditingKitnet] = useState(null);
   const [tenantKitnet, setTenantKitnet] = useState(null);
   const [historyKitnet, setHistoryKitnet] = useState(null);
+  const [selectedKitnet, setSelectedKitnet] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Filters
@@ -219,7 +223,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header - Mobile Optimized */}
       <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-lg border-b border-slate-700/50">
-        <div className="px-4 py-3">
+        <div className="px-4 py-2">
           {/* Top Row - Logo and Menu */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -247,6 +251,14 @@ function App() {
                 <Database className="w-4 h-4" aria-hidden="true" />
                 <span>Backup</span>
               </a>
+              <button
+                onClick={() => setShowDashboard(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                aria-label="Ver Dashboard Financeiro"
+              >
+                <BarChart3 className="w-4 h-4" aria-hidden="true" />
+                <span>Dashboard</span>
+              </button>
               <button
                 onClick={() => setShowHistory(true)}
                 className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
@@ -304,6 +316,13 @@ function App() {
                   <span>Backup</span>
                 </a>
                 <button
+                  onClick={() => { setShowDashboard(true); setShowMobileMenu(false); }}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                >
+                  <BarChart3 className="w-4 h-4" aria-hidden="true" />
+                  <span>Dashboard</span>
+                </button>
+                <button
                   onClick={() => { setShowHistory(true); setShowMobileMenu(false); }}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
                 >
@@ -334,9 +353,9 @@ function App() {
         </div>
 
         {/* Search and Filters - Mobile Optimized */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
-          {/* Search */}
-          <div className="relative flex-1">
+        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4 mb-4">
+          {/* Search - Full width on mobile */}
+          <div className="relative col-span-2 sm:flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
             <input
               type="text"
@@ -358,14 +377,14 @@ function App() {
           </div>
 
           {/* Status Filter */}
-          <div className="relative">
+          <div className="relative col-span-1">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full sm:w-auto pl-3 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-sm"
               aria-label="Filtrar por status"
             >
-              <option value="todos">Todos</option>
+              <option value="todos">Status: Todos</option>
               <option value="livre">Livres</option>
               <option value="alugada">Alugadas</option>
             </select>
@@ -373,14 +392,14 @@ function App() {
           </div>
 
           {/* Payment Filter */}
-          <div className="relative">
+          <div className="relative col-span-1">
             <select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
               className="w-full sm:w-auto pl-3 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-sm"
               aria-label="Filtrar por pagamento"
             >
-              <option value="todos">Pagamento: Todos</option>
+              <option value="todos">Pgto: Todos</option>
               <option value="pago">✓ Pagos</option>
               <option value="pendente">⏳ Pendentes</option>
             </select>
@@ -388,16 +407,16 @@ function App() {
           </div>
 
           {/* Sort */}
-          <div className="relative">
+          <div className="relative col-span-2 sm:col-span-1 sm:w-auto">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="w-full sm:w-auto pl-3 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-sm"
               aria-label="Ordenar por"
             >
-              <option value="numero">Ordenar: Número</option>
-              <option value="valor_asc">Valor ↑</option>
-              <option value="valor_desc">Valor ↓</option>
+              <option value="numero">Ordem: Número</option>
+              <option value="valor_asc">Valor Crescente</option>
+              <option value="valor_desc">Valor Decrescente</option>
               <option value="status">Status</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -447,6 +466,7 @@ function App() {
               <KitnetCard
                 key={kitnet.id}
                 kitnet={kitnet}
+                onSelect={() => setSelectedKitnet(kitnet)}
                 onToggle={() => handleToggleClick(kitnet)}
                 onEdit={() => setEditingKitnet(kitnet)}
                 onEditTenant={() => setTenantKitnet(kitnet)}
@@ -494,6 +514,15 @@ function App() {
         />
       )}
 
+      {selectedKitnet && (
+        <KitnetDetailsModal
+          kitnet={selectedKitnet}
+          onClose={() => setSelectedKitnet(null)}
+          onEdit={() => { setSelectedKitnet(null); setTenantKitnet(selectedKitnet); }}
+          onTogglePayment={() => togglePayment(selectedKitnet.id)}
+        />
+      )}
+
       {confirmDialog && (
         <ConfirmDialog
           {...confirmDialog}
@@ -503,6 +532,10 @@ function App() {
 
       {showHistory && (
         <HistoryModal onClose={() => setShowHistory(false)} />
+      )}
+
+      {showDashboard && (
+        <DashboardModal onClose={() => setShowDashboard(false)} />
       )}
     </div>
   );
