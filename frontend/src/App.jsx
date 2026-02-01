@@ -300,41 +300,44 @@ function App() {
               </button>
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="p-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                className={`p-2 rounded-lg transition-colors ${showMobileMenu ? 'bg-emerald-600 text-white' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'}`}
                 aria-label="Menu"
               >
                 <Menu className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Mobile Menu Dropdown */}
-          {showMobileMenu && (
-            <div className="md:hidden mt-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700/50 animate-fade-in">
-              <div className="grid grid-cols-2 gap-2">
+        {/* Mobile Menu Dropdown - Absolute positioning */}
+        {showMobileMenu && (
+          <>
+            <div className="md:hidden fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowMobileMenu(false)} />
+            <div className="md:hidden absolute top-full left-4 right-4 mt-2 z-50 p-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl animate-fade-in">
+              <div className="grid grid-cols-2 gap-3">
                 <WhatsAppButton kitnets={kitnets} />
                 <ExportButton kitnets={kitnets} />
                 <a
                   href={`${API_URL}/backup`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-2 px-3 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   <Database className="w-4 h-4" aria-hidden="true" />
-                  <span>Backup</span>
+                  <span className="font-medium">Backup</span>
                 </a>
                 <button
                   onClick={() => { setShowHistory(true); setShowMobileMenu(false); }}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-2 px-3 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors"
                 >
                   <History className="w-4 h-4" aria-hidden="true" />
-                  <span>Histórico</span>
+                  <span className="font-medium">Histórico</span>
                 </button>
               </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </header>
 
       <div className="px-2 sm:px-4 py-2 sm:py-4">

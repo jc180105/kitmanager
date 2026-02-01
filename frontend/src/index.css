@@ -45,3 +45,22 @@ body {
 .kitnet-card:hover {
   transform: translateY(-2px);
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}

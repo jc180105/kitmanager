@@ -22,7 +22,11 @@ function WhatsAppButton({ kitnets }) {
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
     }, []);
 
     // Format phone number for WhatsApp (Brazil)
@@ -71,7 +75,7 @@ function WhatsAppButton({ kitnets }) {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="absolute right-0 sm:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden fixed left-4 sm:absolute sm:left-auto">
                         {/* Header */}
                         <div className="p-3 border-b border-slate-700 bg-emerald-500/10">
                             <p className="text-sm font-medium text-emerald-400">

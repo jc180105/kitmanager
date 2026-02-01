@@ -55,9 +55,9 @@ function DashboardSection({ refreshTrigger, apiUrl }) {
     return (
         <div className="mb-6 animate-fade-in">
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {/* Ocupação Card */}
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 relative overflow-hidden group hover:border-blue-500/30 transition-colors">
+                <div className="bg-slate-800/50 p-3 sm:p-4 rounded-xl border border-slate-700/50 relative overflow-hidden group hover:border-blue-500/30 transition-colors">
                     <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Users className="w-16 h-16 text-blue-400" />
                     </div>
@@ -96,7 +96,7 @@ function DashboardSection({ refreshTrigger, apiUrl }) {
                 </div>
 
                 {/* Pendente Card */}
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 relative overflow-hidden group hover:border-amber-500/30 transition-colors">
+                <div className="col-span-2 md:col-span-1 bg-slate-800/50 p-3 sm:p-4 rounded-xl border border-slate-700/50 relative overflow-hidden group hover:border-amber-500/30 transition-colors">
                     <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Wallet className="w-16 h-16 text-amber-400" />
                     </div>
