@@ -12,8 +12,23 @@ import WhatsAppButton from './components/WhatsAppButton';
 import KitnetSkeleton from './components/KitnetSkeleton';
 import DashboardModal from './components/DashboardModal';
 import KitnetDetailsModal from './components/KitnetDetailsModal';
+import { generateContract } from './utils/generateContract';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Determine API URL
+const getApiUrl = () => {
+  // 1. Env Var (Priority)
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+
+  // 2. Vercel Production Fallback
+  if (window.location.hostname.includes('vercel.app')) {
+    return 'https://kitmanager-production.up.railway.app';
+  }
+
+  // 3. Localhost Fallback
+  return 'http://localhost:3001';
+};
+
+const API_URL = getApiUrl();
 
 function App() {
   const [kitnets, setKitnets] = useState([]);
