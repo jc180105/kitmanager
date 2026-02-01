@@ -71,6 +71,17 @@ async function initializeDatabase() {
       )
     `);
 
+    // Create historico_pagamentos table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS historico_pagamentos (
+        id SERIAL PRIMARY KEY,
+        kitnet_id INTEGER,
+        data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        valor DECIMAL(10,2),
+        mes_referencia VARCHAR(7)
+      )
+    `);
+
     // Insert default kitnets if table is empty
     const count = await pool.query('SELECT COUNT(*) FROM kitnets');
     if (parseInt(count.rows[0].count) === 0) {
@@ -327,6 +338,16 @@ app.put('/kitnets/:id/pagamento', async (req, res) => {
   }
 
   try {
+    // Get current kitnet data first
+    const current = await pool.query('SELECT valor, pago_mes FROM kitnets WHERE id = $1', [id]);
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ error: 'Kitnet não encontrada' });
+    }
+
+    const wasPaid = current.rows[0].pago_mes;
+    const valor = current.rows[0].valor;
+
     // Toggle pago_mes value
     const result = await pool.query(
       `UPDATE kitnets 
@@ -336,11 +357,27 @@ app.put('/kitnets/:id/pagamento', async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Kitnet não encontrada' });
+    const isNowPaid = result.rows[0].pago_mes;
+    const status = isNowPaid ? 'Pago' : 'Pendente';
+
+    // Log if it became PAID
+    if (isNowPaid && !wasPaid) {
+      const today = new Date();
+      const mesReferencia = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+      await pool.query(
+        `INSERT INTO historico_pagamentos (kitnet_id, valor, mes_referencia) 
+         VALUES ($1, $2, $3)`,
+        [id, valor, mesReferencia]
+      );
+      console.log(`💰 Pagamento registrado para histórico: Kitnet ${result.rows[0].numero}`);
+    } else if (!isNowPaid && wasPaid) {
+      // Optional: Remove log if toggled back to pending? 
+      // For now, let's keep the log as "payment attempt" or just leave it. 
+      // A strict system would remove the latest log for this month, but simple is better.
+      console.log(`↩️ Pagamento desfeito: Kitnet ${result.rows[0].numero}`);
     }
 
-    const status = result.rows[0].pago_mes ? 'Pago' : 'Pendente';
     console.log(`💰 Kitnet ${result.rows[0].numero}: Pagamento ${status}`);
     res.json(result.rows[0]);
   } catch (error) {
@@ -377,6 +414,29 @@ app.get('/historico', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar histórico:', error);
     res.status(500).json({ error: 'Erro ao buscar histórico' });
+  }
+});
+
+// GET /pagamentos/:id - Lista histórico de pagamentos de uma kitnet
+app.get('/pagamentos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!validateId(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM historico_pagamentos 
+       WHERE kitnet_id = $1 
+       ORDER BY data_pagamento DESC`,
+      [id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar histórico de pagamentos:', error);
+    res.status(500).json({ error: 'Erro ao buscar histórico de pagamentos' });
   }
 });
 
@@ -516,6 +576,24 @@ app.post('/backup/restore', async (req, res) => {
 // ===================
 const cron = require('node-cron');
 
+// Run monthly reset on the 1st day of every month at 00:00
+cron.schedule('0 0 1 * *', async () => {
+  try {
+    console.log('📅 Executando reset mensal de pagamentos...');
+    await pool.query('UPDATE kitnets SET pago_mes = false');
+
+    // Log action
+    await pool.query(
+      `INSERT INTO historico_kitnets (acao, status_novo) 
+       VALUES ('reset_mensal', 'todos_pendentes')`
+    );
+
+    console.log('✅ Todos os pagamentos foram resetados para PENDENTE.');
+  } catch (error) {
+    console.error('❌ Erro no reset mensal:', error);
+  }
+});
+
 // Run backup every day at 2:00 AM
 cron.schedule('0 2 * * *', async () => {
   try {
@@ -525,13 +603,15 @@ cron.schedule('0 2 * * *', async () => {
 
     const kitnets = await pool.query('SELECT * FROM kitnets ORDER BY numero');
     const historico = await pool.query('SELECT * FROM historico_kitnets ORDER BY data_alteracao DESC LIMIT 1000');
+    const pagamentos = await pool.query('SELECT * FROM historico_pagamentos ORDER BY data_pagamento DESC LIMIT 1000');
 
     const backup = {
       exportDate: new Date().toISOString(),
-      version: '1.0',
+      version: '1.1',
       data: {
         kitnets: kitnets.rows,
         historico: historico.rows,
+        pagamentos: pagamentos.rows,
       }
     };
 

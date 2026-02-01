@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database, Menu, ChevronDown } from 'lucide-react';
 import KitnetCard from './components/KitnetCard';
 import EditModal from './components/EditModal';
 import TenantModal from './components/TenantModal';
+import PaymentHistoryModal from './components/PaymentHistoryModal';
 import ConfirmDialog from './components/ConfirmDialog';
 import HistoryModal from './components/HistoryModal';
 import ExportButton from './components/ExportButton';
@@ -18,6 +19,7 @@ function App() {
   const [error, setError] = useState(null);
   const [editingKitnet, setEditingKitnet] = useState(null);
   const [tenantKitnet, setTenantKitnet] = useState(null);
+  const [historyKitnet, setHistoryKitnet] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -25,6 +27,8 @@ function App() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [paymentFilter, setPaymentFilter] = useState('todos');
+  const [sortBy, setSortBy] = useState('numero');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Debounce search
@@ -176,6 +180,35 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Filter and sort kitnets
+  const filteredKitnets = useMemo(() => {
+    let result = [...kitnets];
+
+    // Payment filter
+    if (paymentFilter === 'pago') {
+      result = result.filter(k => k.status === 'alugada' && k.pago_mes === true);
+    } else if (paymentFilter === 'pendente') {
+      result = result.filter(k => k.status === 'alugada' && !k.pago_mes);
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'valor_asc':
+        result.sort((a, b) => parseFloat(a.valor) - parseFloat(b.valor));
+        break;
+      case 'valor_desc':
+        result.sort((a, b) => parseFloat(b.valor) - parseFloat(a.valor));
+        break;
+      case 'status':
+        result.sort((a, b) => a.status.localeCompare(b.status));
+        break;
+      default:
+        result.sort((a, b) => a.numero - b.numero);
+    }
+
+    return result;
+  }, [kitnets, paymentFilter, sortBy]);
 
   // Stats
   const totalKitnets = kitnets.length;
@@ -338,6 +371,37 @@ function App() {
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
+
+          {/* Payment Filter */}
+          <div className="relative">
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className="w-full sm:w-auto pl-3 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-sm"
+              aria-label="Filtrar por pagamento"
+            >
+              <option value="todos">Pagamento: Todos</option>
+              <option value="pago">✓ Pagos</option>
+              <option value="pendente">⏳ Pendentes</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Sort */}
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full sm:w-auto pl-3 pr-8 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-sm"
+              aria-label="Ordenar por"
+            >
+              <option value="numero">Ordenar: Número</option>
+              <option value="valor_asc">Valor ↑</option>
+              <option value="valor_desc">Valor ↓</option>
+              <option value="status">Status</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
         </div>
 
         {/* Error Message */}
@@ -379,7 +443,7 @@ function App() {
             role="list"
             aria-label="Lista de kitnets"
           >
-            {kitnets.map(kitnet => (
+            {filteredKitnets.map(kitnet => (
               <KitnetCard
                 key={kitnet.id}
                 kitnet={kitnet}
@@ -387,18 +451,19 @@ function App() {
                 onEdit={() => setEditingKitnet(kitnet)}
                 onEditTenant={() => setTenantKitnet(kitnet)}
                 onTogglePayment={() => togglePayment(kitnet.id)}
+                onShowHistory={() => setHistoryKitnet(kitnet)}
               />
             ))}
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && kitnets.length === 0 && !error && (
-          <div className="text-center py-16">
+        {!loading && filteredKitnets.length === 0 && !error && (
+          <div className="text-center py-16 animate-fade-in">
             <Home className="w-12 h-12 text-slate-600 mx-auto mb-4" aria-hidden="true" />
             <p className="text-slate-400 text-sm">
-              {searchTerm || statusFilter !== 'todos'
-                ? 'Nenhuma kitnet encontrada'
+              {searchTerm || statusFilter !== 'todos' || paymentFilter !== 'todos'
+                ? 'Nenhuma kitnet encontrada com os filtros selecionados'
                 : 'Nenhuma kitnet cadastrada'}
             </p>
           </div>
@@ -419,6 +484,13 @@ function App() {
           kitnet={tenantKitnet}
           onSave={updateTenant}
           onClose={() => setTenantKitnet(null)}
+        />
+      )}
+
+      {historyKitnet && (
+        <PaymentHistoryModal
+          kitnet={historyKitnet}
+          onClose={() => setHistoryKitnet(null)}
         />
       )}
 

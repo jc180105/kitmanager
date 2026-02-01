@@ -1,60 +1,70 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Base styles - prevent white bar on mobile */
-html,
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  background-color: #0f172a;
+  margin: 0;
+  min-width: 320px;
   min-height: 100vh;
-  min-height: 100dvh;
-  overscroll-behavior: none;
-}
-
-#root {
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-/* Custom toggle switch styles */
-.toggle-switch {
-  @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out cursor-pointer;
-}
-
-.toggle-switch::after {
-  content: '';
-  @apply absolute left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out;
-}
-
-.toggle-switch[data-checked="true"]::after {
-  @apply translate-x-5;
-}
-
-/* Modal backdrop */
-.modal-backdrop {
-  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40;
 }
 
 /* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
-/* Card hover effects */
 .kitnet-card {
-  @apply transition-all duration-200 ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .kitnet-card:hover {
-  @apply -translate-y-1 shadow-xl;
+  transform: translateY(-2px);
+}
+
+.toggle-switch {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500;
+}
+
+.toggle-switch[data-checked="true"] {
+  @apply bg-emerald-500;
+}
+
+.toggle-switch[data-checked="false"] {
+  @apply bg-red-500;
+}
+
+.toggle-switch::after {
+  content: "";
+  @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1;
+}
+
+.toggle-switch[data-checked="true"]::after {
+  @apply translate-x-6;
 }

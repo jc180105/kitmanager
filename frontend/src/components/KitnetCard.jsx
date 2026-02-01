@@ -1,6 +1,6 @@
-import { Pencil, User, Loader2, MessageCircle, DollarSign } from 'lucide-react';
+import { Pencil, User, Loader2, MessageCircle, DollarSign, History } from 'lucide-react';
 
-function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment }) {
+function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, onShowHistory }) {
     const isLivre = kitnet.status === 'livre';
     const isLoading = kitnet._loading;
     const isPago = kitnet.pago_mes;
@@ -11,6 +11,23 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment })
             style: 'currency',
             currency: 'BRL'
         }).format(value);
+    };
+
+    // Helper to get WhatsApp link
+    const getWhatsAppLink = () => {
+        if (!kitnet.inquilino_telefone) return '#';
+
+        const phone = kitnet.inquilino_telefone.replace(/\D/g, '');
+        let message = '';
+
+        // If pending payment, add billing message
+        if (!isLivre && !isPago) {
+            const today = new Date();
+            const monthName = today.toLocaleDateString('pt-BR', { month: 'long' });
+            message = `Olá ${kitnet.inquilino_nome || 'Inquilino'}, lembrete do aluguel da Kitnet ${kitnet.numero} referente a ${monthName}.\nValor: ${formatCurrency(kitnet.valor)}\nVencimento dia ${kitnet.dia_vencimento || '10'}.\n\nSe já pagou, favor desconsiderar.`;
+        }
+
+        return `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
     };
 
     return (
@@ -104,6 +121,7 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment })
                                 : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
                                 }`}
                             aria-label={isPago ? 'Marcar como pendente' : 'Marcar como pago'}
+                            title={isPago ? 'Marcar como pendente' : 'Marcar como pago'}
                         >
                             <DollarSign className="w-4 h-4" aria-hidden="true" />
                         </button>
@@ -112,11 +130,15 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment })
                     {/* WhatsApp Button (only when rented with phone) */}
                     {!isLivre && kitnet.inquilino_telefone && (
                         <a
-                            href={`https://wa.me/55${kitnet.inquilino_telefone.replace(/\D/g, '')}`}
+                            href={getWhatsAppLink()}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors text-sm"
-                            aria-label="Enviar WhatsApp"
+                            className={`flex items-center gap-1 px-2 py-2 rounded-lg transition-colors text-sm ${!isPago
+                                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
+                                : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400'
+                                }`}
+                            aria-label={!isPago ? "Cobrar no WhatsApp" : "Enviar WhatsApp"}
+                            title={!isPago ? "Cobrar no WhatsApp" : "Enviar WhatsApp"}
                         >
                             <MessageCircle className="w-4 h-4" aria-hidden="true" />
                         </a>
@@ -128,8 +150,21 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment })
                             onClick={onEditTenant}
                             className="flex items-center gap-1 px-2 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors text-sm"
                             aria-label="Editar dados do inquilino"
+                            title="Editar Inquilino"
                         >
                             <User className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                    )}
+
+                    {/* History Button (only when rented) */}
+                    {!isLivre && (
+                        <button
+                            onClick={onShowHistory}
+                            className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm"
+                            aria-label="Ver histórico de pagamentos"
+                            title="Histórico de Pagamentos"
+                        >
+                            <History className="w-4 h-4" aria-hidden="true" />
                         </button>
                     )}
 
@@ -138,12 +173,16 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment })
                         onClick={onEdit}
                         className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm"
                         aria-label="Editar valor e descrição"
+                        title="Editar Detalhes"
                     >
                         <Pencil className="w-4 h-4" aria-hidden="true" />
                         <span className="hidden sm:inline">Editar</span>
                     </button>
                 </div>
             </div>
+
+            {/* History Button (Absolute positioned at bottom-right of image area or similar? or just another button) */}
+            {/* Let's keep it simple for now, maybe accessible via clicking the payment badge? No, explicit button is better. */}
         </article>
     );
 }
