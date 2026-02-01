@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, Users, DollarSign, Loader2, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
-function DashboardSection() {
+function DashboardSection({ refreshTrigger }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true); // Controlar visibilidade do gráfico?
 
     useEffect(() => {
         fetchDashboard();
-    }, []);
+    }, [refreshTrigger]);
 
     const fetchDashboard = async () => {
         try {

@@ -41,6 +41,7 @@ function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [dashboardTrigger, setDashboardTrigger] = useState(0);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,6 +130,7 @@ function App() {
       if (newStatus === 'alugada') {
         setTenantKitnet(updatedKitnet);
       }
+      setDashboardTrigger(prev => prev + 1);
     } catch (err) {
       setError(err.message);
       fetchKitnets();
@@ -187,6 +189,7 @@ function App() {
 
       const updatedKitnet = await response.json();
       setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
+      setDashboardTrigger(prev => prev + 1);
     } catch (err) {
       setError(err.message);
     }
@@ -336,7 +339,7 @@ function App() {
 
       <div className="px-4 py-4">
         {/* Dashboard Section (Embedded) */}
-        <DashboardSection />
+        <DashboardSection refreshTrigger={dashboardTrigger} />
 
         {/* Search and Filters - Mobile Optimized */}
         <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4 mb-4">
