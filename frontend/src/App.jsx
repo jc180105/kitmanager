@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database, Menu, ChevronDown, BarChart3 } from 'lucide-react';
+import { Home, Loader2, RefreshCw, AlertCircle, Search, Filter, History, X, Database, Menu, ChevronDown } from 'lucide-react';
 import KitnetCard from './components/KitnetCard';
 import EditModal from './components/EditModal';
 import TenantModal from './components/TenantModal';
@@ -10,7 +10,7 @@ import ExportButton from './components/ExportButton';
 import NotificationBadge from './components/NotificationBadge';
 import WhatsAppButton from './components/WhatsAppButton';
 import KitnetSkeleton from './components/KitnetSkeleton';
-import DashboardModal from './components/DashboardModal';
+import DashboardSection from './components/DashboardSection';
 import KitnetDetailsModal from './components/KitnetDetailsModal';
 import { generateContract } from './utils/generateContract';
 
@@ -40,7 +40,6 @@ function App() {
   const [selectedKitnet, setSelectedKitnet] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Filters
@@ -267,14 +266,6 @@ function App() {
                 <span>Backup</span>
               </a>
               <button
-                onClick={() => setShowDashboard(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
-                aria-label="Ver Dashboard Financeiro"
-              >
-                <BarChart3 className="w-4 h-4" aria-hidden="true" />
-                <span>Dashboard</span>
-              </button>
-              <button
                 onClick={() => setShowHistory(true)}
                 className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
                 aria-label="Ver histórico de alterações"
@@ -331,13 +322,6 @@ function App() {
                   <span>Backup</span>
                 </a>
                 <button
-                  onClick={() => { setShowDashboard(true); setShowMobileMenu(false); }}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
-                >
-                  <BarChart3 className="w-4 h-4" aria-hidden="true" />
-                  <span>Dashboard</span>
-                </button>
-                <button
                   onClick={() => { setShowHistory(true); setShowMobileMenu(false); }}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
                 >
@@ -351,21 +335,8 @@ function App() {
       </header>
 
       <div className="px-4 py-4">
-        {/* Stats Bar - Mobile Optimized */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
-          <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-3 sm:p-4 text-center">
-            <p className="text-slate-400 text-xs sm:text-sm">Total</p>
-            <p className="text-xl sm:text-2xl font-bold text-white">{totalKitnets}</p>
-          </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 sm:p-4 text-center">
-            <p className="text-emerald-400 text-xs sm:text-sm">Livres</p>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-400">{livres}</p>
-          </div>
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4 text-center">
-            <p className="text-red-400 text-xs sm:text-sm">Alugadas</p>
-            <p className="text-xl sm:text-2xl font-bold text-red-400">{alugadas}</p>
-          </div>
-        </div>
+        {/* Dashboard Section (Embedded) */}
+        <DashboardSection />
 
         {/* Search and Filters - Mobile Optimized */}
         <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4 mb-4">
@@ -547,10 +518,6 @@ function App() {
 
       {showHistory && (
         <HistoryModal onClose={() => setShowHistory(false)} />
-      )}
-
-      {showDashboard && (
-        <DashboardModal onClose={() => setShowDashboard(false)} />
       )}
     </div>
   );
