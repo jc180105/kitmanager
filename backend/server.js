@@ -38,28 +38,25 @@ const pool = process.env.DATABASE_URL
     database: process.env.DB_NAME || 'imobiliaria'
   });
 
-// Initialize database tables
-async function initializeDatabase() {
+// Initialize Database
+const initDb = async () => {
   try {
-    // Create kitnets table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS kitnets (
         id SERIAL PRIMARY KEY,
         numero INTEGER UNIQUE NOT NULL,
-        status VARCHAR(20) DEFAULT 'livre',
-        valor DECIMAL(10,2) DEFAULT 0,
+        valor NUMERIC(10, 2) NOT NULL,
         descricao TEXT,
-        inquilino_nome VARCHAR(255),
-        inquilino_telefone VARCHAR(50),
+        status VARCHAR(20) DEFAULT 'livre',
+        inquilino_nome VARCHAR(100),
+        inquilino_telefone VARCHAR(20),
+        inquilino_cpf VARCHAR(20),
+        inquilino_rg VARCHAR(20),
         data_entrada DATE,
         dia_vencimento INTEGER,
-        pago_mes BOOLEAN DEFAULT false,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create historico table
-    await pool.query(`
+        pago_mes BOOLEAN DEFAULT FALSE
+      );
+      
       CREATE TABLE IF NOT EXISTS historico_kitnets (
         id SERIAL PRIMARY KEY,
         kitnet_id INTEGER,
@@ -68,19 +65,22 @@ async function initializeDatabase() {
         status_anterior VARCHAR(20),
         status_novo VARCHAR(20),
         data_alteracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+      );
 
-    // Create historico_pagamentos table
-    await pool.query(`
       CREATE TABLE IF NOT EXISTS historico_pagamentos (
         id SERIAL PRIMARY KEY,
-        kitnet_id INTEGER,
+        kitnet_id INTEGER REFERENCES kitnets(id),
+        valor NUMERIC(10, 2) NOT NULL,
         data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        valor DECIMAL(10,2),
-        mes_referencia VARCHAR(7)
-      )
+        mes_referencia VARCHAR(7) -- Format: YYYY-MM
+      );
+
+      -- Update schema for existing tables
+      ALTER TABLE kitnets 
+      ADD COLUMN IF NOT EXISTS inquilino_cpf VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS inquilino_rg VARCHAR(20);
     `);
+    console.log('✅ Banco de dados conectado e tabelas verificadas');
 
     // Insert default kitnets if table is empty
     const count = await pool.query('SELECT COUNT(*) FROM kitnets');
@@ -95,19 +95,10 @@ async function initializeDatabase() {
       console.log('✅ 20 kitnets criadas com sucesso!');
     }
 
-    // Migration: Add pago_mes column if it doesn't exist
-    try {
-      await pool.query('ALTER TABLE kitnets ADD COLUMN IF NOT EXISTS pago_mes BOOLEAN DEFAULT false');
-      console.log('✅ Coluna pago_mes verificada/adicionada');
-    } catch (migrationError) {
-      // Column might already exist, ignore error
-    }
-
-    console.log('✅ Banco de dados inicializado com sucesso!');
-  } catch (error) {
-    console.error('❌ Erro ao inicializar banco de dados:', error.message);
+  } catch (err) {
+    console.error('❌ Erro ao conectar ao banco:', err);
   }
-}
+};
 
 // Test connection and initialize
 pool.connect((err, client, release) => {
@@ -116,7 +107,7 @@ pool.connect((err, client, release) => {
   } else {
     console.log('✅ Conectado ao PostgreSQL');
     release();
-    initializeDatabase();
+    initDb();
   }
 });
 
@@ -228,7 +219,7 @@ app.put('/kitnets/:id/status', async (req, res) => {
       updateQuery = `
         UPDATE kitnets 
         SET status = $1, inquilino_nome = NULL, inquilino_telefone = NULL, 
-            data_entrada = NULL, dia_vencimento = NULL
+            data_entrada = NULL, dia_vencimento = NULL, inquilino_cpf = NULL, inquilino_rg = NULL
         WHERE id = $2 
         RETURNING *
       `;
@@ -293,7 +284,7 @@ app.put('/kitnets/:id/detalhes', async (req, res) => {
 // PUT /kitnets/:id/inquilino - Atualiza dados do inquilino
 app.put('/kitnets/:id/inquilino', async (req, res) => {
   const { id } = req.params;
-  const { inquilino_nome, inquilino_telefone, data_entrada, dia_vencimento } = req.body;
+  const { inquilino_nome, inquilino_telefone, inquilino_cpf, inquilino_rg, data_entrada, dia_vencimento } = req.body;
 
   if (!validateId(id)) {
     return res.status(400).json({ error: 'ID inválido' });
@@ -310,22 +301,25 @@ app.put('/kitnets/:id/inquilino', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE kitnets 
-       SET inquilino_nome = $1, inquilino_telefone = $2, 
-           data_entrada = $3, dia_vencimento = $4
-       WHERE id = $5 
-       RETURNING *`,
-      [inquilino_nome, inquilino_telefone, data_entrada, dia_vencimento, id]
+       SET inquilino_nome = $1, 
+           inquilino_telefone = $2, 
+           inquilino_cpf = $3,
+           inquilino_rg = $4,
+           data_entrada = $5, 
+           dia_vencimento = $6, 
+           status = 'alugada'
+       WHERE id = $7 RETURNING *`,
+      [inquilino_nome, inquilino_telefone, inquilino_cpf, inquilino_rg, data_entrada, dia_vencimento, id]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Kitnet não encontrada' });
     }
 
-    console.log(`👤 Inquilino atualizado na Kitnet ${result.rows[0].numero}: ${inquilino_nome}`);
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Erro ao atualizar inquilino:', error);
-    res.status(500).json({ error: 'Erro ao atualizar inquilino' });
+    res.status(500).json({ error: 'Erro ao atualizar dados do inquilino' });
   }
 });
 
