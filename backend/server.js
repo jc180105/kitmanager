@@ -671,6 +671,65 @@ cron.schedule('0 2 * * *', async () => {
 console.log('⏰ Backup automático agendado para 02:00 diariamente');
 
 // ===================
+// ROUTES - DASHBOARD
+// ===================
+app.get('/dashboard/stats', async (req, res) => {
+  try {
+    // 1. Estatísticas de Ocupação e Receita Potencial
+    const statsQuery = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'alugada' THEN 1 ELSE 0 END) as alugadas,
+        SUM(CASE WHEN status = 'livre' THEN 1 ELSE 0 END) as livres,
+        SUM(CASE WHEN status = 'alugada' THEN valor ELSE 0 END) as receita_potencial
+      FROM kitnets
+    `);
+
+    const stats = statsQuery.rows[0];
+
+    // 2. Receita Realizada (Mês Atual)
+    const today = new Date();
+    const mesAtual = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+    const receitaQuery = await pool.query(`
+      SELECT SUM(valor) as receita_realizada
+      FROM historico_pagamentos
+      WHERE mes_referencia = $1
+    `, [mesAtual]);
+
+    const receitaRealizada = parseFloat(receitaQuery.rows[0].receita_realizada || 0);
+    const receitaPotencial = parseFloat(stats.receita_potencial || 0);
+
+    // 3. Histórico últimos 6 meses (Gráfico)
+    const graficoQuery = await pool.query(`
+      SELECT mes_referencia, SUM(valor) as total
+      FROM historico_pagamentos
+      GROUP BY mes_referencia
+      ORDER BY mes_referencia DESC
+      LIMIT 6
+    `);
+
+    res.json({
+      ocupacao: {
+        total: parseInt(stats.total),
+        alugadas: parseInt(stats.alugadas),
+        livres: parseInt(stats.livres),
+        taxa: stats.total > 0 ? Math.round((stats.alugadas / stats.total) * 100) : 0
+      },
+      financeiro: {
+        potencial: receitaPotencial,
+        realizado: receitaRealizada,
+        pendente: Math.max(0, receitaPotencial - receitaRealizada)
+      },
+      grafico: graficoQuery.rows.reverse() // Do mais antigo para o mais recente
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dashboard:', error);
+    res.status(500).json({ error: 'Erro ao buscar dados do dashboard' });
+  }
+});
+
+// ===================
 // START SERVER
 // ===================
 app.listen(PORT, () => {
