@@ -365,12 +365,22 @@ app.put('/kitnets/:id/pagamento', async (req, res) => {
       const today = new Date();
       const mesReferencia = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
-      await pool.query(
-        `INSERT INTO historico_pagamentos (kitnet_id, valor, mes_referencia) 
-         VALUES ($1, $2, $3)`,
-        [id, valor, mesReferencia]
+      // Check if already paid this month
+      const existing = await pool.query(
+        'SELECT id FROM historico_pagamentos WHERE kitnet_id = $1 AND mes_referencia = $2',
+        [id, mesReferencia]
       );
-      console.log(`💰 Pagamento registrado para histórico: Kitnet ${result.rows[0].numero}`);
+
+      if (existing.rows.length === 0) {
+        await pool.query(
+          `INSERT INTO historico_pagamentos (kitnet_id, valor, mes_referencia) 
+           VALUES ($1, $2, $3)`,
+          [id, valor, mesReferencia]
+        );
+        console.log(`💰 Pagamento registrado para histórico: Kitnet ${result.rows[0].numero}`);
+      } else {
+        console.log(`ℹ️ Pagamento já registrado para este mês: Kitnet ${result.rows[0].numero}`);
+      }
     } else if (!isNowPaid && wasPaid) {
       // Optional: Remove log if toggled back to pending? 
       // For now, let's keep the log as "payment attempt" or just leave it. 
@@ -437,6 +447,29 @@ app.get('/pagamentos/:id', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar histórico de pagamentos:', error);
     res.status(500).json({ error: 'Erro ao buscar histórico de pagamentos' });
+  }
+});
+
+// DELETE /pagamentos/:id - Remove um registro de histórico de pagamento
+app.delete('/pagamentos/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const result = await pool.query('DELETE FROM historico_pagamentos WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pagamento não encontrado' });
+    }
+
+    console.log(`🗑️ Pagamento removido do histórico: ID ${id}`);
+    res.json({ success: true, deleted: result.rows[0] });
+  } catch (error) {
+    console.error('Erro ao excluir pagamento:', error);
+    res.status(500).json({ error: 'Erro ao excluir pagamento' });
   }
 });
 

@@ -97,15 +97,19 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
             {/* Actions */}
             <div className="flex items-center justify-between gap-2">
                 {/* Toggle Switch */}
+                {/* Toggle Switch */}
                 <button
                     onClick={onToggle}
                     disabled={isLoading}
-                    className={`toggle-switch ${isLivre ? 'bg-emerald-500' : 'bg-red-500'} ${isLoading ? 'opacity-50 cursor-wait' : ''
-                        }`}
-                    data-checked={isLivre}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 ${isLivre ? 'bg-emerald-500' : 'bg-red-500'
+                        } ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
                     aria-label={isLivre ? 'Marcar como alugada' : 'Marcar como livre'}
                     aria-pressed={!isLivre}
                 >
+                    <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isLivre ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                    />
                     {isLoading && (
                         <Loader2 className="w-4 h-4 text-white animate-spin absolute left-1/2 -translate-x-1/2" />
                     )}
