@@ -53,6 +53,7 @@ async function initializeDatabase() {
         inquilino_telefone VARCHAR(50),
         data_entrada DATE,
         dia_vencimento INTEGER,
+        pago_mes BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -81,6 +82,14 @@ async function initializeDatabase() {
         );
       }
       console.log('✅ 20 kitnets criadas com sucesso!');
+    }
+
+    // Migration: Add pago_mes column if it doesn't exist
+    try {
+      await pool.query('ALTER TABLE kitnets ADD COLUMN IF NOT EXISTS pago_mes BOOLEAN DEFAULT false');
+      console.log('✅ Coluna pago_mes verificada/adicionada');
+    } catch (migrationError) {
+      // Column might already exist, ignore error
     }
 
     console.log('✅ Banco de dados inicializado com sucesso!');
@@ -306,6 +315,37 @@ app.put('/kitnets/:id/inquilino', async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar inquilino:', error);
     res.status(500).json({ error: 'Erro ao atualizar inquilino' });
+  }
+});
+
+// PUT /kitnets/:id/pagamento - Toggle status de pagamento
+app.put('/kitnets/:id/pagamento', async (req, res) => {
+  const { id } = req.params;
+
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    // Toggle pago_mes value
+    const result = await pool.query(
+      `UPDATE kitnets 
+       SET pago_mes = NOT COALESCE(pago_mes, false)
+       WHERE id = $1 
+       RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Kitnet não encontrada' });
+    }
+
+    const status = result.rows[0].pago_mes ? 'Pago' : 'Pendente';
+    console.log(`💰 Kitnet ${result.rows[0].numero}: Pagamento ${status}`);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao atualizar pagamento:', error);
+    res.status(500).json({ error: 'Erro ao atualizar pagamento' });
   }
 });
 

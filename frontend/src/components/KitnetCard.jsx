@@ -1,8 +1,9 @@
-import { Pencil, User, Loader2, MessageCircle } from 'lucide-react';
+import { Pencil, User, Loader2, MessageCircle, DollarSign } from 'lucide-react';
 
-function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant }) {
+function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment }) {
     const isLivre = kitnet.status === 'livre';
     const isLoading = kitnet._loading;
+    const isPago = kitnet.pago_mes;
 
     // Format currency
     const formatCurrency = (value) => {
@@ -29,6 +30,20 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant }) {
             >
                 {isLivre ? 'LIVRE' : 'ALUGADA'}
             </div>
+
+            {/* Payment Badge (only when rented) */}
+            {!isLivre && (
+                <div
+                    className={`absolute -top-2 left-3 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${isPago
+                        ? 'bg-green-500 text-white'
+                        : 'bg-amber-500 text-white'
+                        }`}
+                    aria-label={isPago ? 'Pagamento em dia' : 'Pagamento pendente'}
+                >
+                    <DollarSign className="w-3 h-3" />
+                    {isPago ? 'PAGO' : 'PENDENTE'}
+                </div>
+            )}
 
             {/* Kitnet Number and Price */}
             <div className="flex items-center gap-3 mb-4">
@@ -80,6 +95,20 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant }) {
                 </button>
 
                 <div className="flex gap-2">
+                    {/* Payment Toggle (only when rented) */}
+                    {!isLivre && (
+                        <button
+                            onClick={onTogglePayment}
+                            className={`flex items-center gap-1 px-2 py-2 rounded-lg transition-colors text-sm ${isPago
+                                ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
+                                : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
+                                }`}
+                            aria-label={isPago ? 'Marcar como pendente' : 'Marcar como pago'}
+                        >
+                            <DollarSign className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                    )}
+
                     {/* WhatsApp Button (only when rented with phone) */}
                     {!isLivre && kitnet.inquilino_telefone && (
                         <a

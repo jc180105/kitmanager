@@ -151,6 +151,25 @@ function App() {
     setTenantKitnet(null);
   };
 
+  // Toggle payment status
+  const togglePayment = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/kitnets/${id}/pagamento`, {
+        method: 'PUT',
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao atualizar pagamento');
+      }
+
+      const updatedKitnet = await response.json();
+      setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(null), 5000);
@@ -367,6 +386,7 @@ function App() {
                 onToggle={() => handleToggleClick(kitnet)}
                 onEdit={() => setEditingKitnet(kitnet)}
                 onEditTenant={() => setTenantKitnet(kitnet)}
+                onTogglePayment={() => togglePayment(kitnet.id)}
               />
             ))}
           </div>
