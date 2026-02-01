@@ -337,9 +337,9 @@ function App() {
         </div>
       </header>
 
-      <div className="px-4 py-4">
+      <div className="px-2 sm:px-4 py-2 sm:py-4">
         {/* Dashboard Section (Embedded) */}
-        <DashboardSection refreshTrigger={dashboardTrigger} />
+        <DashboardSection refreshTrigger={dashboardTrigger} apiUrl={API_URL} />
 
         {/* Search and Filters - Mobile Optimized */}
         <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4 mb-4">

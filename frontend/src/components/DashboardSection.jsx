@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, Users, DollarSign, Loader2, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
-function DashboardSection({ refreshTrigger }) {
+function DashboardSection({ refreshTrigger, apiUrl }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isExpanded, setIsExpanded] = useState(true); // Controlar visibilidade do gráfico?
+    const [isExpanded, setIsExpanded] = useState(true);
 
     useEffect(() => {
         fetchDashboard();
@@ -13,17 +13,12 @@ function DashboardSection({ refreshTrigger }) {
 
     const fetchDashboard = async () => {
         try {
-            // Em Vercel/Prod, getApiUrl deve ser resolvido. Aqui uso fallback simples ou window.location logic se necessario
-            // Mas posso copiar a logica do App.jsx ou assumir que o fetch relative funciona se configured proxy, 
-            // ou usar VITE_API_URL.
-            const API_URL = import.meta.env.VITE_API_URL ||
-                (window.location.hostname.includes('vercel') ? 'https://kitmanager-production.up.railway.app' : 'http://localhost:3001');
-
-            const res = await fetch(`${API_URL}/dashboard/stats`);
+            const baseUrl = apiUrl || (window.location.hostname.includes('vercel') ? 'https://kitmanager-production.up.railway.app' : 'http://localhost:3001');
+            const res = await fetch(`${baseUrl}/dashboard/stats`);
             const json = await res.json();
             setData(json);
         } catch (err) {
-            console.error(err);
+            console.error('Dashboard error:', err);
         } finally {
             setLoading(false);
         }
@@ -129,26 +124,40 @@ function DashboardSection({ refreshTrigger }) {
                 </button>
 
                 {isExpanded && (
-                    <div className="p-4 pt-0 h-[200px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={grafico}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                <XAxis
-                                    dataKey="mes_referencia"
-                                    stroke="#94a3b8"
-                                    tick={{ fill: '#94a3b8', fontSize: 10 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <YAxis hide />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                                    {grafico.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill="#10b981" />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="p-4 pt-0 min-h-[180px] w-full flex items-center justify-center">
+                        {grafico && grafico.length > 0 ? (
+                            <div className="h-[180px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={grafico}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                        <XAxis
+                                            dataKey="mes_referencia"
+                                            stroke="#94a3b8"
+                                            tick={{ fill: '#94a3b8', fontSize: 10 }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickFormatter={(val) => {
+                                                const [year, month] = val.split('-');
+                                                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                                                return `${months[parseInt(month) - 1]}/${year.slice(-2)}`;
+                                            }}
+                                        />
+                                        <YAxis hide domain={[0, 'auto']} />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                        <Bar dataKey="total" radius={[4, 4, 0, 0]} barSize={40}>
+                                            {grafico.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill="#10b981" />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-10 opacity-40">
+                                <TrendingUp className="w-12 h-12 mb-2 text-slate-500" />
+                                <p className="text-sm text-slate-400">Nenhum pagamento registrado ainda.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
