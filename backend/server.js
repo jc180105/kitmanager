@@ -3,6 +3,29 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { Pool } = require('pg');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'doc-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +35,7 @@ const PORT = process.env.PORT || 3001;
 // ===================
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // Rate Limiting - 100 requests per 15 minutes
 const limiter = rateLimit({
@@ -72,7 +96,25 @@ const initDb = async () => {
         kitnet_id INTEGER REFERENCES kitnets(id),
         valor NUMERIC(10, 2) NOT NULL,
         data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         mes_referencia VARCHAR(7) -- Format: YYYY-MM
+      );
+
+      CREATE TABLE IF NOT EXISTS documentos (
+        id SERIAL PRIMARY KEY,
+        kitnet_id INTEGER REFERENCES kitnets(id),
+        nome_arquivo VARCHAR(255) NOT NULL,
+        caminho_arquivo VARCHAR(255) NOT NULL,
+        tipo_arquivo VARCHAR(50),
+        data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS despesas (
+        id SERIAL PRIMARY KEY,
+        descricao VARCHAR(255) NOT NULL,
+        valor NUMERIC(10, 2) NOT NULL,
+        data_despesa DATE DEFAULT CURRENT_DATE,
+        categoria VARCHAR(50) DEFAULT 'Manutenção'
       );
 
       -- Update schema for existing tables
@@ -477,32 +519,46 @@ app.get('/kitnets/vencimentos', async (req, res) => {
     const today = new Date();
     const currentDay = today.getDate();
 
-    // Get all rented kitnets with due dates in the next 7 days
+    // Get all rented kitnets with due dates
     const result = await pool.query(`
       SELECT id, numero, status, valor, descricao, 
              inquilino_nome, inquilino_telefone, 
-             data_entrada, dia_vencimento
+             data_entrada, dia_vencimento, pago_mes
       FROM kitnets
       WHERE status = 'alugada' 
         AND dia_vencimento IS NOT NULL
       ORDER BY dia_vencimento ASC
     `);
 
-    // Filter kitnets with due dates in the next 7 days
-    const notifications = result.rows.filter(kitnet => {
+    // Filter kitnets: Overdue OR Due in next 7 days
+    const notifications = result.rows.map(kitnet => {
       const dueDay = kitnet.dia_vencimento;
       let daysUntilDue;
 
-      if (dueDay >= currentDay) {
+      if (!kitnet.pago_mes && currentDay > dueDay) {
+        // Overdue! (Negative days indicates overdue)
+        daysUntilDue = dueDay - currentDay;
+      } else if (dueDay >= currentDay) {
+        // Due later this month
         daysUntilDue = dueDay - currentDay;
       } else {
-        // Due date already passed this month, check days until next month's due
+        // Due date passed but Paid, or looking at next month 
+        // (If paid, we project to next month. If unpaid, logic above catches it as overdue)
+        // Actually, if paid, we probably don't need to notify yet unless it's very close to next month (e.g. today 30th, due 1st)
         const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
         daysUntilDue = (daysInMonth - currentDay) + dueDay;
       }
 
-      return daysUntilDue <= 7;
-    });
+      return { ...kitnet, daysUntilDue };
+    }).filter(k => {
+      // Include if:
+      // 1. Overdue (daysUntilDue < 0) AND Not Paid
+      // 2. Due soon (daysUntilDue <= 7)
+
+      if (!k.pago_mes && k.daysUntilDue < 0) return true; // Overdue
+      if (k.daysUntilDue >= 0 && k.daysUntilDue <= 7) return true; // Upcoming
+      return false;
+    }).sort((a, b) => a.daysUntilDue - b.daysUntilDue); // Sort by urgency (lowest/most negative first)
 
     res.json(notifications);
   } catch (error) {
@@ -514,8 +570,6 @@ app.get('/kitnets/vencimentos', async (req, res) => {
 // ===================
 // ROUTES - BACKUP
 // ===================
-const fs = require('fs');
-const path = require('path');
 const { exec } = require('child_process');
 
 const BACKUP_DIR = path.join(__dirname, 'backups');
@@ -695,6 +749,8 @@ app.get('/dashboard/stats', async (req, res) => {
     const receitaPotencial = parseFloat(stats.receita_potencial || 0);
 
     // 3. Histórico últimos 6 meses (Gráfico)
+    // We need to subtract expenses here too if we want "Profit", but for now let's keep revenue only or handle profit separately?
+    // Let's keep the chart as "Revenue Evolution" for now as per previous design, potentially add expenses line later.
     const graficoQuery = await pool.query(`
       SELECT mes_referencia, SUM(valor) as total
       FROM historico_pagamentos
@@ -702,6 +758,16 @@ app.get('/dashboard/stats', async (req, res) => {
       ORDER BY mes_referencia DESC
       LIMIT 6
     `);
+
+    // 4. Despesas do Mês
+    const despesasQuery = await pool.query(`
+      SELECT SUM(valor) as total_despesas
+      FROM despesas
+      WHERE to_char(data_despesa, 'YYYY-MM') = $1
+    `, [mesAtual]);
+
+    const despesasMes = parseFloat(despesasQuery.rows[0].total_despesas || 0);
+    const lucroLiquido = receitaRealizada - despesasMes;
 
     res.json({
       ocupacao: {
@@ -713,13 +779,162 @@ app.get('/dashboard/stats', async (req, res) => {
       financeiro: {
         potencial: receitaPotencial,
         realizado: receitaRealizada,
-        pendente: Math.max(0, receitaPotencial - receitaRealizada)
+        pendente: Math.max(0, receitaPotencial - receitaRealizada),
+        despesas: despesasMes,
+        lucro: lucroLiquido
       },
       grafico: graficoQuery.rows.reverse() // Do mais antigo para o mais recente
     });
   } catch (error) {
     console.error('Erro ao buscar dashboard:', error);
     res.status(500).json({ error: 'Erro ao buscar dados do dashboard' });
+  }
+});
+
+// ===================
+// ROUTES - DOCUMENTOS
+// ===================
+
+// POST /upload - Upload de documento
+app.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    const { kitnet_id, tipo } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+    }
+
+    if (!validateId(kitnet_id)) {
+      // Clean up file if validation fails
+      fs.unlinkSync(file.path);
+      return res.status(400).json({ error: 'ID da kitnet inválido.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO documentos (kitnet_id, nome_arquivo, caminho_arquivo, tipo_arquivo)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [kitnet_id, file.originalname, file.path, tipo || file.mimetype]
+    );
+
+    console.log(`📎 Documento salvo: ${file.originalname} para Kitnet ${kitnet_id}`);
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    console.error('Erro no upload:', error);
+    res.status(500).json({ error: 'Erro ao salvar documento.' });
+  }
+});
+
+// GET /kitnets/:id/documentos - Lista documentos
+app.get('/kitnets/:id/documentos', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT * FROM documentos WHERE kitnet_id = $1 ORDER BY data_upload DESC',
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar documentos:', error);
+    res.status(500).json({ error: 'Erro ao buscar documentos.' });
+  }
+});
+
+// DELETE /documentos/:id - Remove documento
+app.delete('/documentos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Get file path first
+    const docQuery = await pool.query('SELECT caminho_arquivo FROM documentos WHERE id = $1', [id]);
+
+    if (docQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Documento não encontrado.' });
+    }
+
+    const filePath = docQuery.rows[0].caminho_arquivo;
+
+    // Delete from DB
+    await pool.query('DELETE FROM documentos WHERE id = $1', [id]);
+
+    // Delete from Disk
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao deletar documento:', error);
+    res.status(500).json({ error: 'Erro ao deletar documento.' });
+  }
+});
+
+// ===================
+// ROUTES - DESPESAS
+// ===================
+
+// GET /despesas - List expenses (optional month filter YYYY-MM)
+app.get('/despesas', async (req, res) => {
+  try {
+    const { mes } = req.query; // YYYY-MM
+    let query = 'SELECT * FROM despesas';
+    const params = [];
+
+    if (mes) {
+      query += ` WHERE to_char(data_despesa, 'YYYY-MM') = $1`;
+      params.push(mes);
+    }
+
+    query += ' ORDER BY data_despesa DESC, id DESC';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar despesas:', error);
+    res.status(500).json({ error: 'Erro ao buscar despesas.' });
+  }
+});
+
+// POST /despesas - Add expense
+app.post('/despesas', async (req, res) => {
+  try {
+    const { descricao, valor, categoria, data_despesa } = req.body;
+
+    if (!descricao || !valor) {
+      return res.status(400).json({ error: 'Descrição e Valor são obrigatórios.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO despesas (descricao, valor, categoria, data_despesa)
+       VALUES ($1, $2, $3, COALESCE($4, CURRENT_DATE))
+       RETURNING *`,
+      [descricao, valor, categoria || 'Outros', data_despesa]
+    );
+
+    console.log(`💸 Despesa adicionada: ${descricao} - R$ ${valor}`);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao salvar despesa:', error);
+    res.status(500).json({ error: 'Erro ao salvar despesa.' });
+  }
+});
+
+// DELETE /despesas/:id - Delete expense
+app.delete('/despesas/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM despesas WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Despesa não encontrada.' });
+    }
+
+    console.log(`🗑️ Despesa removida: ${result.rows[0].descricao}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao excluir despesa:', error);
+    res.status(500).json({ error: 'Erro ao excluir despesa.' });
   }
 });
 

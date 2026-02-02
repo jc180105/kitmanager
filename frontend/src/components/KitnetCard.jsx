@@ -104,13 +104,13 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
                 <button
                     onClick={onToggle}
                     disabled={isLoading}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 ${isLivre ? 'bg-emerald-500' : 'bg-red-500'
+                    className={`relative inline-flex h-8 w-14 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 ${isLivre ? 'bg-emerald-500' : 'bg-red-500'
                         } ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
                     aria-label={isLivre ? 'Marcar como alugada' : 'Marcar como livre'}
                     aria-pressed={!isLivre}
                 >
                     <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isLivre ? 'translate-x-6' : 'translate-x-1'
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isLivre ? 'translate-x-7' : 'translate-x-1'
                             }`}
                     />
                     {isLoading && (
@@ -183,7 +183,6 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
                         title="Editar Detalhes"
                     >
                         <Pencil className="w-4 h-4" aria-hidden="true" />
-                        <span className="hidden sm:inline">Editar</span>
                     </button>
                 </div>
             </div>

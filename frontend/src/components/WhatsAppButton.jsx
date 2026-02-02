@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Users, X, ChevronDown, Copy, Check, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Users, Copy, Check, ExternalLink, MessageCircle } from 'lucide-react';
+import MobileDrawer from './MobileDrawer';
 
 // Group WhatsApp configuration
 const WHATSAPP_GROUP_NAME = "Condomínio Porto Reis 🏬";
@@ -38,17 +39,20 @@ function GroupMessageModal({ groupName, onClose }) {
     const templates = [
         {
             id: 'lembrete',
-            name: '📅 Lembrete de Pagamento',
+            name: 'Lembrete Pgto',
+            icon: '📅',
             text: 'Olá moradores! 🏠\n\nPassando para lembrar que o aluguel vence em breve.\nQualquer dúvida, estou à disposição.\n\nObrigado!',
         },
         {
             id: 'aviso',
-            name: '📢 Aviso Geral',
+            name: 'Aviso Geral',
+            icon: '📢',
             text: 'Olá moradores! 🏠\n\nGostaria de informar que amanhã haverá manutenção no prédio.\nPor favor, fiquem atentos.\n\nObrigado!',
         },
         {
             id: 'agradecimento',
-            name: '🙏 Agradecimento',
+            name: 'Agradecimento',
+            icon: '🙏',
             text: 'Olá moradores! 🏠\n\nObrigado a todos por serem ótimos inquilinos!\nQualquer necessidade, podem contar comigo.\n\nAbraços!',
         },
     ];
@@ -68,139 +72,120 @@ function GroupMessageModal({ groupName, onClose }) {
         }
     };
 
-    const openWhatsAppWeb = () => {
-        // Copy message first
-        navigator.clipboard.writeText(message).then(() => {
-            // Open WhatsApp Web
+    const openWhatsApp = () => {
+        // Always copy to clipboard as backup/convenience
+        navigator.clipboard.writeText(message);
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const encodedMessage = encodeURIComponent(message);
+
+        if (isMobile) {
+            // Mobile: Open App directly with pre-filled text
+            window.location.href = `whatsapp://send?text=${encodedMessage}`;
+        } else {
+            // Desktop: Open Web
             window.open('https://web.whatsapp.com', '_blank');
-        });
+        }
     };
 
     return (
-        <>
-            <div
-                className="modal-backdrop"
-                onClick={onClose}
-                aria-hidden="true"
-            />
+        <MobileDrawer
+            isOpen={true}
+            onClose={onClose}
+            variant="center"
+            title={
+                <div className="flex flex-col">
+                    <span>Mensagem para o Grupo</span>
+                    <span className="text-xs text-emerald-400 font-normal">{groupName}</span>
+                </div>
+            }
+        >
+            <div className="space-y-6">
 
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="group-modal-title"
-            >
-                <div className="animate-fade-in w-full max-w-lg bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl">
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-5 border-b border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-500/20 rounded-lg">
-                                <Users className="w-5 h-5 text-emerald-400" aria-hidden="true" />
-                            </div>
-                            <div>
-                                <h2 id="group-modal-title" className="text-lg font-semibold text-white">
-                                    Mensagem para o Grupo
-                                </h2>
-                                <p className="text-sm text-emerald-400">
-                                    {groupName}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                            aria-label="Fechar"
-                        >
-                            <X className="w-5 h-5 text-slate-400" />
-                        </button>
+                {/* Templates - Horizontal Scroll on Mobile */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Modelos Rápidos
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                        {templates.map((template) => (
+                            <button
+                                key={template.id}
+                                onClick={() => handleTemplateSelect(template)}
+                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${useTemplate === template.id
+                                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                                        : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600 hover:bg-slate-800'
+                                    }`}
+                            >
+                                <span className="text-2xl mb-1">{template.icon}</span>
+                                <span className="text-[10px] font-medium text-center leading-tight">{template.name}</span>
+                            </button>
+                        ))}
                     </div>
+                </div>
 
-                    {/* Content */}
-                    <div className="p-5 space-y-4">
-                        {/* Templates */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Modelos Prontos
-                            </label>
-                            <div className="grid grid-cols-1 gap-2">
-                                {templates.map((template) => (
-                                    <button
-                                        key={template.id}
-                                        onClick={() => handleTemplateSelect(template)}
-                                        className={`text-left px-4 py-3 rounded-xl border transition-all ${useTemplate === template.id
-                                            ? 'border-emerald-500 bg-emerald-500/10'
-                                            : 'border-slate-600 hover:border-slate-500'
-                                            }`}
-                                    >
-                                        <p className="text-white font-medium">{template.name}</p>
-                                        <p className="text-xs text-slate-400 mt-1 line-clamp-1">{template.text}</p>
-                                    </button>
-                                ))}
-                            </div>
+                {/* Custom Message */}
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <label htmlFor="group-message" className="block text-sm font-medium text-slate-300">
+                            Mensagem
+                        </label>
+                        {message && (
+                            <button
+                                onClick={() => { setMessage(''); setUseTemplate(null); }}
+                                className="text-xs text-slate-500 hover:text-white"
+                            >
+                                Limpar
+                            </button>
+                        )}
+                    </div>
+                    <textarea
+                        id="group-message"
+                        value={message}
+                        onChange={(e) => {
+                            setMessage(e.target.value);
+                            setUseTemplate(null);
+                        }}
+                        rows={6}
+                        className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none text-sm"
+                        placeholder="Digite sua mensagem para o grupo..."
+                    />
+                </div>
+
+                {/* Instructions & Actions */}
+                <div className="space-y-3">
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex gap-3 items-start">
+                        <div className="p-1.5 bg-blue-500/20 rounded-full mt-0.5 shrink-0">
+                            <MessageCircle className="w-3.5 h-3.5 text-blue-400" />
                         </div>
-
-                        {/* Custom Message */}
                         <div>
-                            <label htmlFor="group-message" className="block text-sm font-medium text-slate-300 mb-2">
-                                Mensagem Personalizada
-                            </label>
-                            <textarea
-                                id="group-message"
-                                value={message}
-                                onChange={(e) => {
-                                    setMessage(e.target.value);
-                                    setUseTemplate(null);
-                                }}
-                                rows={5}
-                                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                                placeholder="Digite sua mensagem para o grupo..."
-                            />
-                        </div>
-
-                        {/* Instructions */}
-                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                            <p className="text-sm text-blue-400 font-medium mb-2">
-                                📋 Como enviar para o grupo:
+                            <p className="text-xs text-blue-300">
+                                <b>Dica:</b> No celular, o app abrirá direto. No PC, abrirá o WhatsApp Web.
                             </p>
-                            <ol className="text-xs text-blue-300 space-y-1 list-decimal list-inside">
-                                <li>Clique em "Copiar e Abrir WhatsApp"</li>
-                                <li>No WhatsApp Web, abra o grupo "{groupName}"</li>
-                                <li>Cole a mensagem (Ctrl+V) e envie</li>
-                            </ol>
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-3 p-5 border-t border-slate-700">
+                    <div className="flex gap-2">
                         <button
                             onClick={copyMessage}
                             disabled={!message.trim()}
-                            className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors font-medium disabled:opacity-50"
+                            className="px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-colors disabled:opacity-50"
                         >
-                            {copied ? (
-                                <>
-                                    <Check className="w-4 h-4 text-emerald-400" />
-                                    Copiado!
-                                </>
-                            ) : (
-                                <>
-                                    <Copy className="w-4 h-4" />
-                                    Copiar
-                                </>
-                            )}
+                            {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
                         </button>
+
                         <button
-                            onClick={openWhatsAppWeb}
+                            onClick={openWhatsApp}
                             disabled={!message.trim()}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl transition-all font-medium disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-medium disabled:opacity-50 shadow-lg shadow-emerald-500/20"
                         >
-                            <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                            Copiar e Abrir WhatsApp
+                            <span>Abrir WhatsApp</span>
+                            <ExternalLink className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
             </div>
-        </>
+        </MobileDrawer>
     );
 }
 

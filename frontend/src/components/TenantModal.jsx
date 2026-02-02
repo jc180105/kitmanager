@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { X, UserPlus, Phone, Calendar, CreditCard, FileText } from 'lucide-react';
+import { UserPlus, Phone, Calendar, CreditCard, FileText } from 'lucide-react';
 import { generateContract } from '../utils/generateContract';
+import MobileDrawer from './MobileDrawer';
+import DocumentManager from './DocumentManager';
 
 // Format phone number as (XX) XXXXX-XXXX
 const formatPhone = (value) => {
@@ -98,184 +100,159 @@ function TenantModal({ kitnet, onSave, onClose }) {
     };
 
     return (
-        <>
-            {/* Backdrop */}
-            <div
-                className="modal-backdrop"
-                onClick={onClose}
-                aria-hidden="true"
-            />
-
-            {/* Modal */}
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="tenant-modal-title"
-            >
-                <div className="animate-fade-in w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl">
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-5 border-b border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-500/20 rounded-lg">
-                                <UserPlus className="w-5 h-5 text-blue-400" aria-hidden="true" />
-                            </div>
-                            <h2 id="tenant-modal-title" className="text-lg font-semibold text-white">
-                                Inquilino - Kitnet {kitnet.numero}
-                            </h2>
+        <MobileDrawer
+            isOpen={true}
+            onClose={onClose}
+            title={`Inquilino - Kitnet ${kitnet.numero}`}
+        >
+            <div className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                            {error}
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                            aria-label="Fechar"
-                        >
-                            <X className="w-5 h-5 text-slate-400" />
-                        </button>
+                    )}
+
+                    {/* Nome */}
+                    <div>
+                        <label htmlFor="inquilino_nome" className="block text-sm font-medium text-slate-300 mb-2">
+                            Nome Completo *
+                        </label>
+                        <input
+                            type="text"
+                            id="inquilino_nome"
+                            name="inquilino_nome"
+                            value={formData.inquilino_nome}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Ex: João da Silva"
+                            required
+                        />
                     </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="p-5 space-y-4">
-                        {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                                {error}
-                            </div>
-                        )}
+                    {/* Telefone */}
+                    <div>
+                        <label htmlFor="inquilino_telefone" className="block text-sm font-medium text-slate-300 mb-2">
+                            <Phone className="w-4 h-4 inline mr-1" aria-hidden="true" />
+                            Telefone (WhatsApp)
+                        </label>
+                        <input
+                            type="tel"
+                            id="inquilino_telefone"
+                            name="inquilino_telefone"
+                            value={formData.inquilino_telefone}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="(48) 98843-8860"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">Formata automaticamente</p>
+                    </div>
 
-                        {/* Nome */}
+                    {/* CPF e RG (Grid) */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="inquilino_nome" className="block text-sm font-medium text-slate-300 mb-2">
-                                Nome Completo *
+                            <label htmlFor="inquilino_cpf" className="block text-sm font-medium text-slate-300 mb-2">
+                                CPF
                             </label>
                             <input
                                 type="text"
-                                id="inquilino_nome"
-                                name="inquilino_nome"
-                                value={formData.inquilino_nome}
+                                id="inquilino_cpf"
+                                name="inquilino_cpf"
+                                value={formData.inquilino_cpf}
                                 onChange={handleChange}
                                 className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Ex: João da Silva"
-                                required
+                                placeholder="000.000.000-00"
                             />
                         </div>
-
-                        {/* Telefone */}
                         <div>
-                            <label htmlFor="inquilino_telefone" className="block text-sm font-medium text-slate-300 mb-2">
-                                <Phone className="w-4 h-4 inline mr-1" aria-hidden="true" />
-                                Telefone (WhatsApp)
+                            <label htmlFor="inquilino_rg" className="block text-sm font-medium text-slate-300 mb-2">
+                                RG
                             </label>
                             <input
-                                type="tel"
-                                id="inquilino_telefone"
-                                name="inquilino_telefone"
-                                value={formData.inquilino_telefone}
+                                type="text"
+                                id="inquilino_rg"
+                                name="inquilino_rg"
+                                value={formData.inquilino_rg}
                                 onChange={handleChange}
                                 className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="(48) 98843-8860"
-                            />
-                            <p className="mt-1 text-xs text-slate-500">Formata automaticamente</p>
-                        </div>
-
-                        {/* CPF e RG (Grid) */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="inquilino_cpf" className="block text-sm font-medium text-slate-300 mb-2">
-                                    CPF
-                                </label>
-                                <input
-                                    type="text"
-                                    id="inquilino_cpf"
-                                    name="inquilino_cpf"
-                                    value={formData.inquilino_cpf}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="000.000.000-00"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="inquilino_rg" className="block text-sm font-medium text-slate-300 mb-2">
-                                    RG
-                                </label>
-                                <input
-                                    type="text"
-                                    id="inquilino_rg"
-                                    name="inquilino_rg"
-                                    value={formData.inquilino_rg}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="0.000.000"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Data de Entrada */}
-                        <div>
-                            <label htmlFor="data_entrada" className="block text-sm font-medium text-slate-300 mb-2">
-                                <Calendar className="w-4 h-4 inline mr-1" aria-hidden="true" />
-                                Data de Entrada
-                            </label>
-                            <input
-                                type="date"
-                                id="data_entrada"
-                                name="data_entrada"
-                                value={formData.data_entrada}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="0.000.000"
                             />
                         </div>
+                    </div>
 
-                        {/* Dia de Vencimento */}
-                        <div>
-                            <label htmlFor="dia_vencimento" className="block text-sm font-medium text-slate-300 mb-2">
-                                <CreditCard className="w-4 h-4 inline mr-1" aria-hidden="true" />
-                                Dia de Vencimento do Aluguel
-                            </label>
-                            <input
-                                type="number"
-                                id="dia_vencimento"
-                                name="dia_vencimento"
-                                min="1"
-                                max="31"
-                                value={formData.dia_vencimento}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Ex: 10"
-                            />
-                        </div>
+                    {/* Data de Entrada */}
+                    <div>
+                        <label htmlFor="data_entrada" className="block text-sm font-medium text-slate-300 mb-2">
+                            <Calendar className="w-4 h-4 inline mr-1" aria-hidden="true" />
+                            Data de Entrada
+                        </label>
+                        <input
+                            type="date"
+                            id="data_entrada"
+                            name="data_entrada"
+                            value={formData.data_entrada}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
 
-                        {/* Actions */}
-                        <div className="pt-2">
+                    {/* Dia de Vencimento */}
+                    <div>
+                        <label htmlFor="dia_vencimento" className="block text-sm font-medium text-slate-300 mb-2">
+                            <CreditCard className="w-4 h-4 inline mr-1" aria-hidden="true" />
+                            Dia de Vencimento do Aluguel
+                        </label>
+                        <input
+                            type="number"
+                            id="dia_vencimento"
+                            name="dia_vencimento"
+                            min="1"
+                            max="31"
+                            value={formData.dia_vencimento}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Ex: 10"
+                        />
+                    </div>
+
+                    {/* Documentos */}
+                    <div>
+                        <DocumentManager kitnetId={kitnet.id} />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-2">
+                        <button
+                            type="button"
+                            onClick={() => generateContract({ ...kitnet, ...formData })}
+                            className="w-full mb-3 flex items-center justify-center gap-2 px-4 py-3 bg-slate-700/30 hover:bg-slate-700/50 border border-slate-600 border-dashed text-slate-300 hover:text-white rounded-xl transition-colors font-medium group"
+                        >
+                            <FileText className="w-5 h-5 text-slate-400 group-hover:text-blue-400" />
+                            Gerar Contrato (PDF)
+                        </button>
+
+                        <div className="flex gap-3">
                             <button
                                 type="button"
-                                onClick={() => generateContract({ ...kitnet, ...formData })}
-                                className="w-full mb-3 flex items-center justify-center gap-2 px-4 py-3 bg-slate-700/30 hover:bg-slate-700/50 border border-slate-600 border-dashed text-slate-300 hover:text-white rounded-xl transition-colors font-medium group"
+                                onClick={onClose}
+                                className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors font-medium"
                             >
-                                <FileText className="w-5 h-5 text-slate-400 group-hover:text-blue-400" />
-                                Gerar Contrato (PDF)
+                                Cancelar
                             </button>
-
-                            <div className="flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors font-medium"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all font-medium disabled:opacity-50"
-                                >
-                                    {saving ? 'Salvando...' : 'Salvar'}
-                                </button>
-                            </div>
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all font-medium disabled:opacity-50"
+                            >
+                                {saving ? 'Salvando...' : 'Salvar'}
+                            </button>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
-        </>
+        </MobileDrawer>
     );
 }
 
 export default TenantModal;
+
