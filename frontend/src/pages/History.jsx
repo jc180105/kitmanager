@@ -80,29 +80,64 @@ export default function HistoryPage() {
                 {!loading && !error && history.length > 0 && (
                     <div className="divide-y divide-slate-700/50">
                         {history.map((item) => (
-                            <div key={item.id} className="p-4 sm:p-5 hover:bg-slate-800/50 transition-colors">
+                            <div key={`${item.tipo}-${item.id}`} className="p-4 sm:p-5 hover:bg-slate-800/50 transition-colors">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                                    <span className="text-white font-medium text-lg">
-                                        Kitnet {item.kitnet_numero}
-                                    </span>
-                                    <span className="text-xs text-slate-400 font-mono bg-slate-900/50 px-2 py-1 rounded">
-                                        {formatDate(item.data_alteracao)}
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        {/* Ícone baseado no tipo */}
+                                        <div className={`p-2 rounded-lg ${item.tipo === 'pagamento'
+                                                ? 'bg-emerald-500/10 text-emerald-400'
+                                                : 'bg-purple-500/10 text-purple-400'
+                                            }`}>
+                                            {item.tipo === 'pagamento' ? (
+                                                <span className="font-bold text-lg">R$</span>
+                                            ) : (
+                                                <HistoryIcon className="w-5 h-5" />
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <span className="text-white font-medium text-lg block">
+                                                {item.titulo}
+                                                {item.tipo === 'alteracao' && ` - Kitnet ${item.kitnet_numero || '?'}`}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-mono">
+                                                {formatDate(item.data)}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm">
-                                    <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${item.status_anterior === 'livre'
-                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                        }`}>
-                                        {item.status_anterior?.toUpperCase() || 'N/A'}
-                                    </div>
-                                    <ArrowRight className="w-4 h-4 text-slate-600" aria-hidden="true" />
-                                    <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${item.status_novo === 'livre'
-                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                        }`}>
-                                        {item.status_novo?.toUpperCase() || 'N/A'}
-                                    </div>
+
+                                <div className="ml-12 flex items-center gap-3 text-sm mt-2 sm:mt-0">
+                                    {item.tipo === 'pagamento' ? (
+                                        <div className="flex gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-slate-500 uppercase">Referência</span>
+                                                <span className="text-slate-300 font-medium">{item.detalhe_1}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-slate-500 uppercase">Valor</span>
+                                                <span className="text-emerald-400 font-bold">
+                                                    {Number(item.detalhe_2).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3 w-full">
+                                            <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${item.detalhe_1 === 'livre'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                }`}>
+                                                {item.detalhe_1?.toUpperCase() || 'N/A'}
+                                            </div>
+                                            <ArrowRight className="w-4 h-4 text-slate-600" aria-hidden="true" />
+                                            <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${item.detalhe_2 === 'livre'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                }`}>
+                                                {item.detalhe_2?.toUpperCase() || 'N/A'}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

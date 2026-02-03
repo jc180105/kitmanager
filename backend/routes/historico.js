@@ -4,25 +4,54 @@ const pool = require('../config/database');
 const { validateId } = require('../utils/validators');
 
 // GET /historico - Lista histórico de alterações
+// GET /historico - Lista histórico de alterações e pagamentos unificados
 router.get('/', async (req, res) => {
     try {
         const { kitnet_id, limit = 50 } = req.query;
+        const params = [];
+        let paramCount = 1;
 
         let query = `
-      SELECT id, kitnet_id, kitnet_numero, acao, status_anterior, status_novo, data_alteracao
-      FROM historico_kitnets
-    `;
-        const params = [];
+            SELECT 
+                id, 
+                kitnet_id, 
+                acao as titulo, 
+                status_anterior as detalhe_1, 
+                status_novo as detalhe_2, 
+                data_alteracao as data, 
+                'alteracao' as tipo
+            FROM historico_kitnets
+        `;
+
+        let queryPagamentos = `
+            SELECT 
+                id, 
+                kitnet_id, 
+                'Pagamento Recebido' as titulo, 
+                mes_referencia as detalhe_1, 
+                CAST(valor AS VARCHAR) as detalhe_2, 
+                data_pagamento as data, 
+                'pagamento' as tipo
+            FROM historico_pagamentos
+        `;
 
         if (kitnet_id && validateId(kitnet_id)) {
-            query += ' WHERE kitnet_id = $1';
+            query += ` WHERE kitnet_id = $${paramCount}`;
+            queryPagamentos += ` WHERE kitnet_id = $${paramCount}`;
             params.push(kitnet_id);
+            paramCount++;
         }
 
-        query += ' ORDER BY data_alteracao DESC LIMIT $' + (params.length + 1);
+        // UNION ALL para combinar os dois resultados
+        const finalQuery = `
+            SELECT * FROM (${query} UNION ALL ${queryPagamentos}) as combinado
+            ORDER BY data DESC
+            LIMIT $${paramCount}
+        `;
+
         params.push(parseInt(limit) || 50);
 
-        const result = await pool.query(query, params);
+        const result = await pool.query(finalQuery, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Erro ao buscar histórico:', error);
