@@ -181,6 +181,25 @@ export default function Configuration({ apiUrl }) {
                                 <p className="text-slate-500 text-xs px-4">
                                     Verifique a janela onde o backend está rodando para escanear o código.
                                 </p>
+
+                                <div className="mt-6 border-t border-slate-100 pt-4">
+                                    <p className="text-xs text-slate-400 mb-2">Alternativa: Cole o código do log aqui:</p>
+                                    <input
+                                        type="text"
+                                        placeholder="Cole o código (2@...)"
+                                        className="w-full text-xs p-2 border border-slate-200 rounded mb-2 font-mono text-slate-500"
+                                        value={botStatus.manualQr || ''}
+                                        onChange={(e) => setBotStatus(s => ({ ...s, manualQr: e.target.value }))}
+                                    />
+                                    {botStatus.manualQr && (
+                                        <div className="mt-4 animate-fade-in">
+                                            <div className="bg-white p-2 border-2 border-slate-100 rounded-lg mb-2 shadow-sm inline-block">
+                                                <QRCode value={botStatus.manualQr} size={200} />
+                                            </div>
+                                            <p className="text-emerald-600 font-bold text-sm">Escaneie agora!</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div className="text-center text-slate-400 animate-pulse">
