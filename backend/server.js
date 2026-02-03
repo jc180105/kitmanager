@@ -122,11 +122,12 @@ const initWhatsAppConditional = async () => {
       console.log('🤖 Iniciando WhatsApp Bot (configuração ativa)...');
       await initWhatsApp();
     } else {
-      console.log('ℹ️ WhatsApp Bot desativado via configuração');
+      console.log(`ℹ️ WhatsApp Bot NÃO iniciado. Motivo: Ativo=${ativo}, API_KEY=${!!process.env.OPENAI_API_KEY}`);
+      console.log('DICA: Ative via PUT /config/whatsapp ou verifique sua API Key.');
     }
   } catch (e) {
     // Tabela ainda não existe, ignora
-    console.log('ℹ️ WhatsApp Bot não iniciado (aguardando configuração)');
+    console.log('ℹ️ Erro ao verificar config (pode ser primeira execução):', e.message);
   }
 };
 

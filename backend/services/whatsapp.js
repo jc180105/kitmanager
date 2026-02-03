@@ -67,6 +67,8 @@ async function initWhatsApp() {
         if (qr) {
             console.log('\n📱 Escaneie o QR Code abaixo com seu WhatsApp:\n');
             qrcode.generate(qr, { small: true });
+            console.log('\nSTRING DO QR CODE (Caso a imagem falhe):');
+            console.log(qr);
             console.log('\n⏳ Aguardando conexão...\n');
         }
 
