@@ -43,10 +43,22 @@ router.put('/whatsapp', async (req, res) => {
     try {
         const { ativo } = req.body;
 
-        await pool.query(
-            "UPDATE config SET valor = $1, atualizado_em = CURRENT_TIMESTAMP WHERE chave = 'whatsapp_ativo'",
-            [ativo ? 'true' : 'false']
-        );
+        // Garantir que a tabela existe
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS config (
+                chave VARCHAR(50) PRIMARY KEY,
+                valor TEXT,
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // UPSERT - insere ou atualiza
+        await pool.query(`
+            INSERT INTO config (chave, valor, atualizado_em) 
+            VALUES ('whatsapp_ativo', $1, CURRENT_TIMESTAMP)
+            ON CONFLICT (chave) 
+            DO UPDATE SET valor = $1, atualizado_em = CURRENT_TIMESTAMP
+        `, [ativo ? 'true' : 'false']);
 
         // Se ativado e existe o módulo WhatsApp, tentar iniciar
         if (ativo) {
