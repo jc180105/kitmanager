@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Home as HomeIcon, LayoutDashboard, History, Database } from 'lucide-react';
 import BottomNav from './BottomNav';
 import NotificationBadge from './NotificationBadge';
+import WhatsAppToggle from './WhatsAppToggle';
 import { Toaster } from 'sonner';
 import { API_URL } from '../utils/config';
 
@@ -41,6 +42,7 @@ export default function Layout() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-3">
+                        <WhatsAppToggle />
                         <NotificationBadge />
                         <div className="h-6 w-px bg-slate-700/50"></div>
                         <a

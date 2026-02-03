@@ -15,6 +15,7 @@ const despesasRoutes = require('./routes/despesas');
 const documentosRoutes = require('./routes/documentos');
 const dashboardRoutes = require('./routes/dashboard');
 const backupRoutes = require('./routes/backup');
+const configRoutes = require('./routes/config');
 
 // Initialize Database Table (keep simple init here or move to config/db?)
 // Keeping it simple for now, utilizing the existing logic structure but cleaned up.
@@ -110,15 +111,27 @@ pool.connect((err, client, release) => {
 // Initialize Scheduler (Cron Jobs)
 initScheduler();
 
-// Initialize WhatsApp Bot (se OPENAI_API_KEY estiver configurada)
-// Initialize WhatsApp Bot (se OPENAI_API_KEY estiver configurada)
-// if (process.env.OPENAI_API_KEY) {
-//   initWhatsApp().catch(err => {
-//     console.error('⚠️ Erro ao iniciar WhatsApp Bot:', err.message);
-//   });
-// } else {
-//   console.log('ℹ️ WhatsApp Bot desativado (OPENAI_API_KEY não configurada)');
-// }
+// Initialize WhatsApp Bot condicionalmente baseado na config do banco
+const initWhatsAppConditional = async () => {
+  try {
+    const result = await pool.query("SELECT valor FROM config WHERE chave = 'whatsapp_ativo'");
+    const ativo = result.rows[0]?.valor === 'true';
+
+    if (ativo && process.env.OPENAI_API_KEY) {
+      const { initWhatsApp } = require('./services/whatsapp');
+      console.log('🤖 Iniciando WhatsApp Bot (configuração ativa)...');
+      await initWhatsApp();
+    } else {
+      console.log('ℹ️ WhatsApp Bot desativado via configuração');
+    }
+  } catch (e) {
+    // Tabela ainda não existe, ignora
+    console.log('ℹ️ WhatsApp Bot não iniciado (aguardando configuração)');
+  }
+};
+
+// Aguardar DB inicializar antes de checar config do WhatsApp
+setTimeout(() => initWhatsAppConditional(), 3000);
 
 // API Routes
 app.get('/', (req, res) => {
@@ -135,6 +148,7 @@ app.use('/pagamentos', pagamentosRoutes);
 app.use('/despesas', despesasRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/backup', backupRoutes);
+app.use('/config', configRoutes);
 app.use('/', documentosRoutes); // Mounts at root because it defines mixed paths
 
 // Error Handling Middleware
