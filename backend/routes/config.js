@@ -71,14 +71,7 @@ router.put('/whatsapp', async (req, res) => {
                     });
                 }
             } catch (e) {
-                if (!isConnected()) {
-                    console.log('🤖 Iniciando WhatsApp Bot...');
-                    initWhatsApp().catch(err => {
-                        console.error('Erro ao iniciar WhatsApp:', err.message);
-                    });
-                }
-            } catch (e) {
-                console.error('WhatsApp module load error:', e);
+                console.error('WhatsApp module load error details:', e);
                 console.log('WhatsApp module not available');
             }
         }
