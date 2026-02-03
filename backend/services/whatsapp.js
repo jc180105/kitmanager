@@ -8,9 +8,10 @@ let currentQR = null;
 let makeWASocket, DisconnectReason, useMultiFileAuthState, downloadMediaMessage;
 
 // Inicializar OpenAI para transcrição
-const openai = new OpenAI({
+// Inicializar OpenAI para transcrição (apenas se tiver key)
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
-});
+}) : null;
 
 /**
  * Carrega Baileys dinamicamente (ESM)
@@ -27,6 +28,10 @@ async function loadBaileys() {
  * Transcreve áudio usando OpenAI Whisper
  */
 async function transcreverAudio(audioBuffer) {
+    if (!openai) {
+        console.warn('⚠️ OpenAI não configurado. Transcrição de áudio ignorada.');
+        return null;
+    }
     try {
         const tempPath = path.join(__dirname, '..', 'temp_audio.ogg');
         fs.writeFileSync(tempPath, audioBuffer);

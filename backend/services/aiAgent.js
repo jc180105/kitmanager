@@ -1,10 +1,10 @@
 const OpenAI = require('openai');
 const pool = require('../config/database');
 
-// Inicializar OpenAI
-const openai = new OpenAI({
+// Inicializar OpenAI (se houver chave)
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
-});
+}) : null;
 
 /**
  * Busca kitnets disponíveis no banco de dados
@@ -123,6 +123,10 @@ REGRAS IMPORTANTES:
 `;
 
         // Chamar OpenAI
+        if (!openai) {
+            throw new Error('OpenAI API Key não configurada');
+        }
+
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [

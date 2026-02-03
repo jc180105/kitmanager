@@ -117,13 +117,18 @@ const initWhatsAppConditional = async () => {
     const result = await pool.query("SELECT valor FROM config WHERE chave = 'whatsapp_ativo'");
     const ativo = result.rows[0]?.valor === 'true';
 
-    if (ativo && process.env.OPENAI_API_KEY) {
+    if (ativo) {
       const { initWhatsApp } = require('./services/whatsapp');
-      console.log('🤖 Iniciando WhatsApp Bot (configuração ativa)...');
+      console.log('🤖 Iniciando WhatsApp Bot...');
+
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('⚠️ AVISO: OPENAI_API_KEY não encontrada. O bot funcionará mas não responderá com IA.');
+      }
+
       await initWhatsApp();
     } else {
-      console.log(`ℹ️ WhatsApp Bot NÃO iniciado. Motivo: Ativo=${ativo}, API_KEY=${!!process.env.OPENAI_API_KEY}`);
-      console.log('DICA: Ative via PUT /config/whatsapp ou verifique sua API Key.');
+      console.log(`ℹ️ WhatsApp Bot NÃO iniciado. Motivo: Ativo=${ativo}`);
+      console.log('DICA: Ative via PUT /config/whatsapp');
     }
   } catch (e) {
     // Tabela ainda não existe, ignora
