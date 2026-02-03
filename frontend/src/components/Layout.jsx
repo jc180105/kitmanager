@@ -38,11 +38,13 @@ export default function Layout() {
                         <Link to="/history" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/history') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
                             Histórico
                         </Link>
+                        <Link to="/config" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/config') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
+                            Configurações
+                        </Link>
                     </nav>
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-3">
-                        <WhatsAppToggle />
                         <NotificationBadge />
                         <div className="h-6 w-px bg-slate-700/50"></div>
                         <a

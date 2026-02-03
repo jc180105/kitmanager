@@ -109,6 +109,12 @@ function DashboardSection({ refreshTrigger, apiUrl }) {
 
     return (
         <div className="mb-6 animate-fade-in space-y-4">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-white hidden md:block">Visão Geral</h2>
+            </div>
+
+
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {/* Ocupação Card */}

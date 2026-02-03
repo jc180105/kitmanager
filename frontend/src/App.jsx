@@ -10,6 +10,7 @@ const MenuPage = lazy(() => import('./pages/Menu'));
 const KitnetDetails = lazy(() => import('./pages/KitnetDetails'));
 const KitnetTenant = lazy(() => import('./pages/KitnetTenant'));
 const KitnetEdit = lazy(() => import('./pages/KitnetEdit'));
+const Configuration = lazy(() => import('./pages/Configuration'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -31,6 +32,7 @@ function App() {
             <Route path="kitnet/:id" element={<KitnetDetails />} />
             <Route path="kitnet/:id/inquilino" element={<KitnetTenant />} />
             <Route path="kitnet/:id/editar" element={<KitnetEdit />} />
+            <Route path="config" element={<Configuration />} />
           </Route>
         </Routes>
       </Suspense>

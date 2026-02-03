@@ -67,10 +67,15 @@ async function initWhatsApp() {
 
         if (qr) {
             currentQR = qr; // Salva o QR Code atual
-            console.log('\n📱 Escaneie o QR Code abaixo com seu WhatsApp:\n');
+            console.log('\n================================================================================');
+            console.log('📱 VOCE SOLICITOU CONEXAO VIA TERMINAL');
+            console.log('📱 ESCANIE O QR CODE ABAIXO COM SEU WHATSAPP:');
+            console.log('================================================================================\n');
             qrcode.generate(qr, { small: true });
-            console.log('\nSTRING DO QR CODE (Caso a imagem falhe):');
+            console.log('\n================================================================================');
+            console.log('Caso a imagem acima nao apareca ou esteja distorcida, use a string abaixo:');
             console.log(qr);
+            console.log('================================================================================\n');
             console.log('\n⏳ Aguardando conexão...\n');
         }
 
