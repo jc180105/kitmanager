@@ -13,36 +13,43 @@ router.get('/', async (req, res) => {
 
         let query = `
             SELECT 
-                id, 
-                kitnet_id, 
-                acao as titulo, 
-                status_anterior as detalhe_1, 
-                status_novo as detalhe_2, 
-                data_alteracao as data, 
-                'alteracao' as tipo
-            FROM historico_kitnets
+                h.id, 
+                h.kitnet_id, 
+                CASE 
+                    WHEN h.acao = 'status_change' THEN 'Alteração de Status' 
+                    ELSE h.acao 
+                END as titulo, 
+                h.status_anterior as detalhe_1, 
+                h.status_novo as detalhe_2, 
+                h.data_alteracao as data, 
+                'alteracao' as tipo,
+                COALESCE(k.numero, h.kitnet_numero, 0) as kitnet_numero
+            FROM historico_kitnets h
+            LEFT JOIN kitnets k ON h.kitnet_id = k.id
         `;
 
         let queryPagamentos = `
             SELECT 
-                id, 
-                kitnet_id, 
+                p.id, 
+                p.kitnet_id, 
                 'Pagamento Recebido' as titulo, 
-                mes_referencia as detalhe_1, 
-                CAST(valor AS VARCHAR) as detalhe_2, 
-                data_pagamento as data, 
-                'pagamento' as tipo
-            FROM historico_pagamentos
+                p.mes_referencia as detalhe_1, 
+                CAST(p.valor AS VARCHAR) as detalhe_2, 
+                p.data_pagamento as data, 
+                'pagamento' as tipo,
+                COALESCE(k.numero, 0) as kitnet_numero
+            FROM historico_pagamentos p
+            LEFT JOIN kitnets k ON p.kitnet_id = k.id
         `;
 
         if (kitnet_id && validateId(kitnet_id)) {
-            query += ` WHERE kitnet_id = $${paramCount}`;
-            queryPagamentos += ` WHERE kitnet_id = $${paramCount}`;
+            query += ` WHERE h.kitnet_id = $${paramCount}`;
+            queryPagamentos += ` WHERE p.kitnet_id = $${paramCount}`;
             params.push(kitnet_id);
             paramCount++;
         }
 
-        // UNION ALL para combinar os dois resultados
+        // UNION ALL para combinar os dois resultados e ordenar
         const finalQuery = `
             SELECT * FROM (${query} UNION ALL ${queryPagamentos}) as combinado
             ORDER BY data DESC
