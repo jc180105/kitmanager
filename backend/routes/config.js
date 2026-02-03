@@ -95,4 +95,43 @@ router.get('/whatsapp/status', async (req, res) => {
     }
 });
 
+
+// POST /config/whatsapp/reset - Reinicia a conexão e limpa sessão
+router.post('/whatsapp/reset', async (req, res) => {
+    try {
+        const { stopWhatsApp, initWhatsApp } = require('../services/whatsapp');
+        const fs = require('fs');
+        const path = require('path');
+
+        console.log('🔄 Reiniciando WhatsApp Bot...');
+
+        // 1. Parar conexão atual
+        await stopWhatsApp();
+
+        // 2. Limpar pasta de autenticação
+        const authDir = path.join(__dirname, '..', 'auth_info');
+        if (fs.existsSync(authDir)) {
+            fs.rmSync(authDir, { recursive: true, force: true });
+            console.log('🗑️ Sessão antiga removida.');
+        }
+
+        // 3. Reiniciar (se estiver ativo no banco)
+        const result = await pool.query("SELECT valor FROM config WHERE chave = 'whatsapp_ativo'");
+        const ativo = result.rows[0]?.valor === 'true';
+
+        if (ativo) {
+            console.log('🚀 Iniciando nova sessão...');
+            // Pequeno delay para garantir liberação de recursos
+            setTimeout(() => {
+                initWhatsApp().catch(console.error);
+            }, 1000);
+        }
+
+        res.json({ message: 'WhatsApp reiniciado. Aguarde o QR Code no terminal/logs.' });
+    } catch (error) {
+        console.error('Erro ao resetar WhatsApp:', error);
+        res.status(500).json({ error: 'Erro ao resetar WhatsApp' });
+    }
+});
+
 module.exports = router;

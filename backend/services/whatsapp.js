@@ -145,4 +145,11 @@ function isConnected() {
     return sock?.user ? true : false;
 }
 
-module.exports = { initWhatsApp, enviarMensagem, isConnected };
+async function stopWhatsApp() {
+    if (sock) {
+        sock.end(undefined);
+        sock = null;
+    }
+}
+
+module.exports = { initWhatsApp, enviarMensagem, isConnected, stopWhatsApp };
