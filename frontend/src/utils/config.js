@@ -8,7 +8,7 @@ export const getApiUrl = () => {
     }
 
     // 3. Localhost Fallback
-    return 'http://localhost:3002';
+    return 'http://localhost:3001';
 };
 
 export const API_URL = getApiUrl();

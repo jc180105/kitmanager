@@ -5,7 +5,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const pool = require('./config/database');
 const initScheduler = require('./services/scheduler');
-const { initWhatsApp } = require('./services/whatsapp');
+// WhatsApp Bot agora roda em serviço separado (backend-whatsapp/)
 
 // Routes
 const kitnetsRoutes = require('./routes/kitnets');
@@ -78,7 +78,7 @@ const initDb = async () => {
 };
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3001;
 
 // Trust proxy - Required for Railway/Heroku/etc (behind reverse proxy)
 app.set('trust proxy', 1);
@@ -111,13 +111,14 @@ pool.connect((err, client, release) => {
 initScheduler();
 
 // Initialize WhatsApp Bot (se OPENAI_API_KEY estiver configurada)
-if (process.env.OPENAI_API_KEY) {
-  initWhatsApp().catch(err => {
-    console.error('⚠️ Erro ao iniciar WhatsApp Bot:', err.message);
-  });
-} else {
-  console.log('ℹ️ WhatsApp Bot desativado (OPENAI_API_KEY não configurada)');
-}
+// Initialize WhatsApp Bot (se OPENAI_API_KEY estiver configurada)
+// if (process.env.OPENAI_API_KEY) {
+//   initWhatsApp().catch(err => {
+//     console.error('⚠️ Erro ao iniciar WhatsApp Bot:', err.message);
+//   });
+// } else {
+//   console.log('ℹ️ WhatsApp Bot desativado (OPENAI_API_KEY não configurada)');
+// }
 
 // API Routes
 app.get('/', (req, res) => {

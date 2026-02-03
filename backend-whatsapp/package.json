@@ -1,0 +1,21 @@
+{
+    "name": "kitmanager-whatsapp-bot",
+    "version": "1.0.0",
+    "description": "Bot de WhatsApp com IA para KitManager",
+    "main": "server.js",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "@whiskeysockets/baileys": "^7.0.0-rc.9",
+        "dotenv": "^17.2.3",
+        "openai": "^6.17.0",
+        "pg": "^8.11.3",
+        "qrcode-terminal": "^0.12.0"
+    }
+}
