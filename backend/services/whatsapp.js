@@ -4,6 +4,7 @@ const OpenAI = require('openai');
 const { gerarResposta } = require('./aiAgent');
 
 let sock = null;
+let currentQR = null;
 let makeWASocket, DisconnectReason, useMultiFileAuthState, downloadMediaMessage;
 
 // Inicializar OpenAI para transcrição
@@ -65,6 +66,7 @@ async function initWhatsApp() {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
+            currentQR = qr; // Salva o QR Code atual
             console.log('\n📱 Escaneie o QR Code abaixo com seu WhatsApp:\n');
             qrcode.generate(qr, { small: true });
             console.log('\nSTRING DO QR CODE (Caso a imagem falhe):');
@@ -73,6 +75,8 @@ async function initWhatsApp() {
         }
 
         if (connection === 'open') {
+            currentQR = null; // Limpa QR Code após conectar
+            console.log('✅ WhatsApp conectado com sucesso!');
             console.log('✅ WhatsApp conectado com sucesso!');
             console.log('🤖 Bot pronto para receber mensagens.\n');
         }
@@ -154,4 +158,8 @@ async function stopWhatsApp() {
     }
 }
 
-module.exports = { initWhatsApp, enviarMensagem, isConnected, stopWhatsApp };
+function getQR() {
+    return currentQR;
+}
+
+module.exports = { initWhatsApp, enviarMensagem, isConnected, stopWhatsApp, getQR };

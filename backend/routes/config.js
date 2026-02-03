@@ -134,4 +134,14 @@ router.post('/whatsapp/reset', async (req, res) => {
     }
 });
 
+// GET /config/whatsapp/qr - Obtém o código QR atual
+router.get('/whatsapp/qr', (req, res) => {
+    try {
+        const { getQR } = require('../services/whatsapp');
+        res.json({ qr: getQR() });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao obter QR Code' });
+    }
+});
+
 module.exports = router;
