@@ -38,93 +38,98 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
             isOpen={true}
             onClose={onClose}
             title={
-                <span className="flex items-center gap-3">
+                <span className="flex items-center gap-2">
                     Kitnet {kitnet.numero}
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${kitnet.status === 'livre'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${kitnet.status === 'livre'
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-red-500/20 text-red-400'
                         }`}>
                         {kitnet.status === 'livre' ? 'Livre' : 'Alugada'}
                     </span>
                 </span>
             }
         >
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {/* Description */}
-                <p className="text-slate-400 text-sm -mt-2">{kitnet.descricao || 'Sem descrição'}</p>
+                <p className="text-slate-400 text-sm">{kitnet.descricao || 'Sem descrição'}</p>
 
-                {/* Left Column: Tenant Info */}
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-md font-semibold text-white flex items-center gap-2">
+                {/* Tenant Section */}
+                <div className="bg-slate-700/30 p-4 rounded-xl">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                             <User className="w-4 h-4 text-blue-400" />
                             Inquilino
                         </h3>
                         <button
                             onClick={() => { onClose(); onEdit(); }}
-                            className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300"
+                            className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-500/10"
                         >
                             <Edit className="w-3 h-3" /> Editar
                         </button>
                     </div>
 
                     {kitnet.status === 'alugada' ? (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
+                            {/* Name */}
                             <div>
-                                <p className="text-xs text-slate-400 uppercase tracking-wider">Nome</p>
-                                <p className="text-white font-medium text-lg">{kitnet.inquilino_nome || '-'}</p>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Nome</p>
+                                <p className="text-white font-medium">{kitnet.inquilino_nome || '-'}</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+
+                            {/* Contact & Value - Side by Side */}
+                            <div className="flex gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                                         <Phone className="w-3 h-3" /> Contato
                                     </p>
-                                    <p className="text-slate-200 text-sm">{kitnet.inquilino_telefone || '-'}</p>
+                                    <p className="text-slate-200 text-sm truncate">{kitnet.inquilino_telefone || '-'}</p>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <div className="flex-shrink-0">
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                                         <CreditCard className="w-3 h-3" /> Valor
                                     </p>
                                     <p className="text-emerald-400 font-bold">{formatCurrency(kitnet.valor)}</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+
+                            {/* Entry Date & Due Day - Side by Side */}
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                                         <Calendar className="w-3 h-3" /> Entrada
                                     </p>
                                     <p className="text-slate-200 text-sm">{formatDate(kitnet.data_entrada)}</p>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Dia Venc.</p>
+                                <div className="flex-shrink-0">
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Dia Venc.</p>
                                     <p className="text-slate-200 text-sm">Dia {kitnet.dia_vencimento || '?'}</p>
                                 </div>
                             </div>
 
-                            {/* Actions Row */}
-                            <div className="flex gap-2 pt-2">
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-2 pt-2">
                                 <button
                                     onClick={handleWhatsApp}
                                     disabled={!kitnet.inquilino_telefone}
-                                    className="flex-1 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors disabled:opacity-50"
+                                    className="flex-1 min-w-[120px] py-2 px-3 bg-emerald-600/20 hover:bg-emerald-600/30 active:bg-emerald-600/40 text-emerald-400 rounded-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
                                 >
                                     <MessageCircle className="w-4 h-4" /> WhatsApp
                                 </button>
                                 <button
                                     onClick={() => generateContract(kitnet)}
-                                    className="flex-1 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors"
+                                    className="flex-1 min-w-[120px] py-2 px-3 bg-blue-600/20 hover:bg-blue-600/30 active:bg-blue-600/40 text-blue-400 rounded-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-medium transition-colors"
                                 >
                                     <FileText className="w-4 h-4" /> Contrato
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-6 text-slate-500">
-                            <User className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                            <p className="text-sm">Kitnet Livre</p>
+                        <div className="text-center py-4 text-slate-500">
+                            <User className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                            <p className="text-sm mb-3">Kitnet Livre</p>
                             <button
                                 onClick={() => { onClose(); onEdit(); }}
-                                className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-sm"
                             >
                                 Adicionar Inquilino
                             </button>
@@ -132,24 +137,24 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                     )}
                 </div>
 
-                {/* Right Column: History */}
-                <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 flex flex-col h-full">
-                    <h3 className="text-md font-semibold text-white flex items-center gap-2 mb-4">
+                {/* Payment History */}
+                <div className="bg-slate-700/30 p-4 rounded-xl">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
                         <History className="w-4 h-4 text-purple-400" />
                         Histórico Recente
                     </h3>
 
-                    <div className="flex-1 overflow-y-auto max-h-[200px] pr-2 space-y-2 custom-scrollbar">
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
                         {loadingHistory ? (
-                            <p className="text-slate-500 text-center py-6 text-sm">Carregando...</p>
+                            <p className="text-slate-500 text-center py-4 text-sm">Carregando...</p>
                         ) : history.length === 0 ? (
-                            <p className="text-slate-500 text-center py-6 text-sm">Nenhum pagamento registrado.</p>
+                            <p className="text-slate-500 text-center py-4 text-sm">Nenhum pagamento registrado.</p>
                         ) : (
-                            history.map(rec => (
-                                <div key={rec.id} className="flex justify-between items-center p-2.5 bg-slate-900/50 rounded-lg border border-slate-800 text-sm">
+                            history.slice(0, 5).map(rec => (
+                                <div key={rec.id} className="flex justify-between items-center p-2.5 bg-slate-800/50 rounded-lg text-sm">
                                     <div>
                                         <p className="text-white font-medium">{formatCurrency(rec.valor)}</p>
-                                        <p className="text-xs text-slate-400">Ref: {rec.mes_referencia}</p>
+                                        <p className="text-xs text-slate-500">Ref: {rec.mes_referencia}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs text-slate-400">{formatDate(rec.data_pagamento)}</p>
