@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Receipt, Filter, X, Calendar, DollarSign, Tag } from 'lucide-react';
+import { Plus, Trash2, Receipt, Filter, X, Calendar, DollarSign, Tag, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_URL } from '../utils/config';
 
@@ -15,6 +15,7 @@ function ExpenseManager({ onUpdate }) {
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [editingExpense, setEditingExpense] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -48,6 +49,32 @@ function ExpenseManager({ onUpdate }) {
         fetchExpenses();
     }, [selectedMonth]);
 
+    const resetForm = () => {
+        setFormData({
+            descricao: '',
+            valor: '',
+            categoria: 'Manutenção',
+            data_despesa: new Date().toISOString().split('T')[0]
+        });
+        setEditingExpense(null);
+    };
+
+    const openAddModal = () => {
+        resetForm();
+        setShowModal(true);
+    };
+
+    const openEditModal = (expense) => {
+        setFormData({
+            descricao: expense.descricao,
+            valor: expense.valor.toString(),
+            categoria: expense.categoria,
+            data_despesa: expense.data_despesa.split('T')[0]
+        });
+        setEditingExpense(expense);
+        setShowModal(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -57,8 +84,14 @@ function ExpenseManager({ onUpdate }) {
         }
 
         try {
-            const response = await fetch(`${API_URL}/despesas`, {
-                method: 'POST',
+            const url = editingExpense
+                ? `${API_URL}/despesas/${editingExpense.id}`
+                : `${API_URL}/despesas`;
+
+            const method = editingExpense ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
@@ -68,14 +101,9 @@ function ExpenseManager({ onUpdate }) {
 
             if (!response.ok) throw new Error('Erro ao salvar despesa');
 
-            toast.success('Despesa adicionada com sucesso!');
+            toast.success(editingExpense ? 'Despesa atualizada!' : 'Despesa adicionada!');
             setShowModal(false);
-            setFormData({
-                descricao: '',
-                valor: '',
-                categoria: 'Manutenção',
-                data_despesa: new Date().toISOString().split('T')[0]
-            });
+            resetForm();
             fetchExpenses();
             onUpdate?.();
         } catch (err) {
@@ -149,7 +177,7 @@ function ExpenseManager({ onUpdate }) {
 
                     {/* Add Button */}
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={openAddModal}
                         className="flex items-center gap-2 px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors text-sm font-medium"
                     >
                         <Plus className="w-4 h-4" />
@@ -189,11 +217,11 @@ function ExpenseManager({ onUpdate }) {
                             const color = getCategoryColor(expense.categoria);
                             return (
                                 <div key={expense.id} className="p-3 hover:bg-slate-800/50 transition-colors flex items-center justify-between group">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`p-2 bg-${color}-500/10 rounded-lg`}>
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <div className={`p-2 bg-${color}-500/10 rounded-lg shrink-0`}>
                                             <Tag className={`w-4 h-4 text-${color}-400`} />
                                         </div>
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 flex-1">
                                             <p className="text-sm font-medium text-white truncate">{expense.descricao}</p>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className={`text-[10px] px-1.5 py-0.5 bg-${color}-500/10 text-${color}-400 rounded`}>
@@ -205,16 +233,26 @@ function ExpenseManager({ onUpdate }) {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-rose-400 font-bold text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-rose-400 font-bold text-sm whitespace-nowrap">
                                             -{formatCurrency(expense.valor)}
                                         </span>
-                                        <button
-                                            onClick={() => handleDelete(expense.id)}
-                                            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => openEditModal(expense)}
+                                                className="p-1.5 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                title="Editar"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(expense.id)}
+                                                className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                title="Excluir"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -223,20 +261,22 @@ function ExpenseManager({ onUpdate }) {
                 )}
             </div>
 
-            {/* Add Expense Modal */}
+            {/* Add/Edit Expense Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-slide-up">
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700">
                             <div className="flex items-center gap-2">
                                 <div className="p-2 bg-rose-500/10 rounded-lg">
-                                    <Plus className="w-4 h-4 text-rose-400" />
+                                    {editingExpense ? <Pencil className="w-4 h-4 text-rose-400" /> : <Plus className="w-4 h-4 text-rose-400" />}
                                 </div>
-                                <h3 className="text-lg font-semibold text-white">Nova Despesa</h3>
+                                <h3 className="text-lg font-semibold text-white">
+                                    {editingExpense ? 'Editar Despesa' : 'Nova Despesa'}
+                                </h3>
                             </div>
                             <button
-                                onClick={() => setShowModal(false)}
+                                onClick={() => { setShowModal(false); resetForm(); }}
                                 className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -311,8 +351,8 @@ function ExpenseManager({ onUpdate }) {
                                 type="submit"
                                 className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
-                                <Plus className="w-4 h-4" />
-                                Adicionar Despesa
+                                {editingExpense ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                                {editingExpense ? 'Salvar Alterações' : 'Adicionar Despesa'}
                             </button>
                         </form>
                     </div>

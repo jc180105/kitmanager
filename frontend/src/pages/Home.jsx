@@ -361,7 +361,7 @@ export default function Home() {
 
             {/* Grid */}
             {!loading && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-32 md:pb-10 items-start">
                     {filteredKitnets.map(kitnet => (
                         <KitnetCard
                             key={kitnet.id}

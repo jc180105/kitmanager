@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { Pencil, User, Loader2, MessageCircle, DollarSign, History } from 'lucide-react';
 
 function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, onShowHistory, onSelect }) {
+    const navigate = useNavigate();
     const isLivre = kitnet.status === 'livre';
     const isLoading = kitnet._loading;
     const isPago = kitnet.pago_mes;
@@ -37,19 +39,27 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
         if (callback) callback();
     };
 
-    // Handle card click for showing details
+    // Handle card click - navigate on mobile, modal on desktop
     const handleCardClick = (e) => {
         // Only trigger if clicking the card area, not buttons
         if (e.target.closest('button') || e.target.closest('a')) {
             return;
         }
-        if (onSelect) onSelect();
+
+        // Check if mobile (< 768px)
+        const isMobile = window.innerWidth < 768;
+
+        if (isMobile) {
+            navigate(`/kitnet/${kitnet.id}`);
+        } else if (onSelect) {
+            onSelect();
+        }
     };
 
     return (
         <article
             onClick={handleCardClick}
-            className={`kitnet-card relative bg-slate-800/50 backdrop-blur border-2 rounded-2xl p-5 cursor-pointer active:scale-[0.98] transition-transform ${isLivre
+            className={`kitnet-card relative bg-slate-800/50 backdrop-blur border-2 rounded-2xl p-5 cursor-pointer active:scale-[0.98] transition-transform h-full flex flex-col ${isLivre
                 ? 'border-emerald-500/50 shadow-lg shadow-emerald-500/10'
                 : 'border-red-500/50 shadow-lg shadow-red-500/10'
                 }`}
@@ -58,7 +68,9 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
         >
             {/* Status Badge */}
             <div
-                className={`absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs font-semibold ${isLivre ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                className={`absolute top-4 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border ${isLivre
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-red-500/10 text-red-400 border-red-500/20'
                     }`}
                 aria-hidden="true"
             >
@@ -68,9 +80,9 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
             {/* Payment Badge (only when rented) */}
             {!isLivre && (
                 <div
-                    className={`absolute -top-2 left-3 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${isPago
-                        ? 'bg-green-500 text-white'
-                        : 'bg-amber-500 text-white'
+                    className={`absolute top-4 left-4 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase flex items-center gap-1 border ${isPago
+                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                         }`}
                     aria-label={isPago ? 'Pagamento em dia' : 'Pagamento pendente'}
                 >
@@ -111,92 +123,112 @@ function KitnetCard({ kitnet, onToggle, onEdit, onEditTenant, onTogglePayment, o
                 </div>
             )}
 
-            {/* Actions */}
-            <div className="flex items-center justify-between gap-2 mt-4">
-                {/* Toggle Switch */}
+            {/* Actions Footer */}
+            <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                {/* Toggle Switch (Left Side) */}
                 <button
                     onClick={(e) => handleButtonClick(e, onToggle)}
                     disabled={isLoading}
-                    className={`relative inline-flex h-8 w-14 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 ${isLivre ? 'bg-emerald-500' : 'bg-red-500'
+                    className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 ${isLivre ? 'bg-emerald-500' : 'bg-red-500'
                         } ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
                     aria-label={isLivre ? 'Marcar como alugada' : 'Marcar como livre'}
                     aria-pressed={!isLivre}
                 >
                     <span
-                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isLivre ? 'translate-x-7' : 'translate-x-1'
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${isLivre ? 'translate-x-6' : 'translate-x-1'
                             }`}
                     />
                     {isLoading && (
-                        <Loader2 className="w-4 h-4 text-white animate-spin absolute left-1/2 -translate-x-1/2" />
+                        <Loader2 className="w-3 h-3 text-white animate-spin absolute left-1/2 -translate-x-1/2" />
                     )}
                 </button>
 
-                <div className="flex gap-1.5">
+                {/* Action Buttons (Right Side) - Compact Grid */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar mask-gradient-right pr-4">
                     {/* Payment Toggle (only when rented) */}
                     {!isLivre && (
                         <button
-                            onClick={(e) => handleButtonClick(e, onTogglePayment)}
-                            className={`flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${isPago
-                                ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 active:bg-green-500/40'
-                                : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 active:bg-amber-500/40'
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const isMobile = window.innerWidth < 768;
+                                if (isMobile) {
+                                    navigate(`/kitnet/${kitnet.id}`);
+                                } else {
+                                    onTogglePayment?.();
+                                }
+                            }}
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${isPago
+                                ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
+                                : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
                                 }`}
-                            aria-label={isPago ? 'Marcar como pendente' : 'Marcar como pago'}
                             title={isPago ? 'Marcar como pendente' : 'Marcar como pago'}
                         >
-                            <DollarSign className="w-5 h-5" aria-hidden="true" />
+                            <DollarSign className="w-4 h-4" />
                         </button>
                     )}
 
-                    {/* WhatsApp Button (only when rented with phone) */}
+                    {/* WhatsApp Button - Always external link */}
                     {!isLivre && kitnet.inquilino_telefone && (
                         <a
                             href={getWhatsAppLink()}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className={`flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${!isPago
-                                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 active:bg-amber-500/40'
-                                : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 active:bg-emerald-500/40'
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${!isPago
+                                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
+                                : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400'
                                 }`}
-                            aria-label={!isPago ? "Cobrar no WhatsApp" : "Enviar WhatsApp"}
-                            title={!isPago ? "Cobrar no WhatsApp" : "Enviar WhatsApp"}
+                            title="WhatsApp"
                         >
-                            <MessageCircle className="w-5 h-5" aria-hidden="true" />
+                            <MessageCircle className="w-4 h-4" />
                         </a>
                     )}
 
-                    {/* Tenant Button (only when rented) */}
+                    {/* Tenant Button - Navigate on mobile */}
                     {!isLivre && (
                         <button
-                            onClick={(e) => handleButtonClick(e, onEditTenant)}
-                            className="flex items-center justify-center w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 text-blue-400 rounded-xl transition-colors"
-                            aria-label="Editar dados do inquilino"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const isMobile = window.innerWidth < 768;
+                                if (isMobile) {
+                                    navigate(`/kitnet/${kitnet.id}/inquilino`);
+                                } else {
+                                    onEditTenant?.();
+                                }
+                            }}
+                            className="flex items-center justify-center w-9 h-9 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
                             title="Editar Inquilino"
                         >
-                            <User className="w-5 h-5" aria-hidden="true" />
+                            <User className="w-4 h-4" />
                         </button>
                     )}
 
-                    {/* History Button (only when rented) */}
-                    {!isLivre && (
-                        <button
-                            onClick={(e) => handleButtonClick(e, onShowHistory)}
-                            className="flex items-center justify-center w-10 h-10 bg-slate-700/50 hover:bg-slate-700 active:bg-slate-600 text-slate-300 rounded-xl transition-colors"
-                            aria-label="Ver histórico de pagamentos"
-                            title="Histórico de Pagamentos"
-                        >
-                            <History className="w-5 h-5" aria-hidden="true" />
-                        </button>
-                    )}
-
-                    {/* Edit Button */}
+                    {/* History Button - Only on desktop */}
                     <button
-                        onClick={(e) => handleButtonClick(e, onEdit)}
-                        className="flex items-center justify-center w-10 h-10 bg-slate-700/50 hover:bg-slate-700 active:bg-slate-600 text-slate-300 rounded-xl transition-colors"
-                        aria-label="Editar valor e descrição"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onShowHistory?.();
+                        }}
+                        className="hidden md:flex items-center justify-center w-9 h-9 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors"
+                        title="Histórico de Pagamentos"
+                    >
+                        <History className="w-4 h-4" />
+                    </button>
+
+                    {/* Edit Button - Only on desktop */}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onEdit?.();
+                        }}
+                        className="hidden md:flex items-center justify-center w-9 h-9 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
                         title="Editar Detalhes"
                     >
-                        <Pencil className="w-5 h-5" aria-hidden="true" />
+                        <Pencil className="w-4 h-4" />
                     </button>
                 </div>
             </div>

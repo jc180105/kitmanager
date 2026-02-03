@@ -49,31 +49,31 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                 </span>
             }
         >
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
                 {/* Description */}
-                <p className="text-slate-400 text-sm">{kitnet.descricao || 'Sem descrição'}</p>
+                <p className="text-slate-400 text-xs sm:text-sm">{kitnet.descricao || 'Sem descrição'}</p>
 
                 {/* Tenant Section */}
-                <div className="bg-slate-700/30 p-4 rounded-xl">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                            <User className="w-4 h-4 text-blue-400" />
+                <div className="bg-slate-700/30 p-3 sm:p-4 rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
+                            <User className="w-3.5 h-3.5 text-blue-400" />
                             Inquilino
                         </h3>
                         <button
                             onClick={() => { onClose(); onEdit(); }}
-                            className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-500/10"
+                            className="text-[10px] sm:text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-500/10"
                         >
                             <Edit className="w-3 h-3" /> Editar
                         </button>
                     </div>
 
                     {kitnet.status === 'alugada' ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             {/* Name */}
                             <div>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-wider">Nome</p>
-                                <p className="text-white font-medium">{kitnet.inquilino_nome || '-'}</p>
+                                <p className="text-white font-medium text-sm sm:text-base">{kitnet.inquilino_nome || '-'}</p>
                             </div>
 
                             {/* Contact & Value - Side by Side */}
@@ -82,13 +82,13 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                                     <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                                         <Phone className="w-3 h-3" /> Contato
                                     </p>
-                                    <p className="text-slate-200 text-sm truncate">{kitnet.inquilino_telefone || '-'}</p>
+                                    <p className="text-slate-200 text-xs sm:text-sm truncate">{kitnet.inquilino_telefone || '-'}</p>
                                 </div>
                                 <div className="flex-shrink-0">
                                     <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                                         <CreditCard className="w-3 h-3" /> Valor
                                     </p>
-                                    <p className="text-emerald-400 font-bold">{formatCurrency(kitnet.valor)}</p>
+                                    <p className="text-emerald-400 font-bold text-sm sm:text-base">{formatCurrency(kitnet.valor)}</p>
                                 </div>
                             </div>
 
@@ -98,28 +98,28 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                                     <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                                         <Calendar className="w-3 h-3" /> Entrada
                                     </p>
-                                    <p className="text-slate-200 text-sm">{formatDate(kitnet.data_entrada)}</p>
+                                    <p className="text-slate-200 text-xs sm:text-sm">{formatDate(kitnet.data_entrada)}</p>
                                 </div>
                                 <div className="flex-shrink-0">
                                     <p className="text-[10px] text-slate-500 uppercase tracking-wider">Dia Venc.</p>
-                                    <p className="text-slate-200 text-sm">Dia {kitnet.dia_vencimento || '?'}</p>
+                                    <p className="text-slate-200 text-xs sm:text-sm">Dia {kitnet.dia_vencimento || '?'}</p>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex flex-wrap gap-2 pt-2">
+                            <div className="flex flex-wrap gap-2 pt-1 border-t border-white/5 mt-1">
                                 <button
                                     onClick={handleWhatsApp}
                                     disabled={!kitnet.inquilino_telefone}
-                                    className="flex-1 min-w-[120px] py-2 px-3 bg-emerald-600/20 hover:bg-emerald-600/30 active:bg-emerald-600/40 text-emerald-400 rounded-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
+                                    className="flex-1 min-w-[100px] py-1.5 px-2 bg-emerald-600/20 hover:bg-emerald-600/30 active:bg-emerald-600/40 text-emerald-400 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
                                 >
-                                    <MessageCircle className="w-4 h-4" /> WhatsApp
+                                    <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                                 </button>
                                 <button
                                     onClick={() => generateContract(kitnet)}
-                                    className="flex-1 min-w-[120px] py-2 px-3 bg-blue-600/20 hover:bg-blue-600/30 active:bg-blue-600/40 text-blue-400 rounded-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-medium transition-colors"
+                                    className="flex-1 min-w-[100px] py-1.5 px-2 bg-blue-600/20 hover:bg-blue-600/30 active:bg-blue-600/40 text-blue-400 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-colors"
                                 >
-                                    <FileText className="w-4 h-4" /> Contrato
+                                    <FileText className="w-3.5 h-3.5" /> Contrato
                                 </button>
                             </div>
                         </div>
@@ -138,27 +138,27 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                 </div>
 
                 {/* Payment History */}
-                <div className="bg-slate-700/30 p-4 rounded-xl">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                        <History className="w-4 h-4 text-purple-400" />
+                <div className="bg-slate-700/30 p-3 sm:p-4 rounded-xl">
+                    <h3 className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2 mb-2">
+                        <History className="w-3.5 h-3.5 text-purple-400" />
                         Histórico Recente
                     </h3>
 
-                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                    <div className="space-y-2 max-h-[120px] overflow-y-auto">
                         {loadingHistory ? (
-                            <p className="text-slate-500 text-center py-4 text-sm">Carregando...</p>
+                            <p className="text-slate-500 text-center py-2 text-xs">Carregando...</p>
                         ) : history.length === 0 ? (
-                            <p className="text-slate-500 text-center py-4 text-sm">Nenhum pagamento registrado.</p>
+                            <p className="text-slate-500 text-center py-2 text-xs">Nenhum pagamento registrado.</p>
                         ) : (
                             history.slice(0, 5).map(rec => (
-                                <div key={rec.id} className="flex justify-between items-center p-2.5 bg-slate-800/50 rounded-lg text-sm">
+                                <div key={rec.id} className="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg text-xs">
                                     <div>
                                         <p className="text-white font-medium">{formatCurrency(rec.valor)}</p>
-                                        <p className="text-xs text-slate-500">Ref: {rec.mes_referencia}</p>
+                                        <p className="text-[10px] text-slate-500">Ref: {rec.mes_referencia}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-xs text-slate-400">{formatDate(rec.data_pagamento)}</p>
-                                        <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">Pago</span>
+                                        <p className="text-[10px] text-slate-400">{formatDate(rec.data_pagamento)}</p>
+                                        <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1 py-0.5 rounded">Pago</span>
                                     </div>
                                 </div>
                             ))

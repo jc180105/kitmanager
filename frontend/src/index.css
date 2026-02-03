@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: #0f172a;
+  /* Slate 900 */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -19,6 +20,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #0f172a;
+  overscroll-behavior-y: none;
 }
 
 /* Animations */
@@ -34,76 +37,6 @@ body {
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-.kitnet-card {
-  transition: all 0.2s ease-in-out;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.kitnet-card button,
-.kitnet-card a {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  cursor: pointer;
-  position: relative;
-  z-index: 10;
-}
-
-.kitnet-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Ensure buttons are always clickable on mobile */
-button,
-a {
-  touch-action: manipulation;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 40;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
-  /* Prevent pull-to-refresh on body (we'll implement custom) */
-}
-
-/* Safe Area Utilities */
-.pb-safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.safe-area-padding-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Base utilities */
-.no-select {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Animations */
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -114,57 +47,49 @@ body {
   }
 }
 
-@keyframes slideDown {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.animate-slide-down {
-  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.animate-fade-out {
-  animation: fadeOut 0.2s ease-in forwards;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Custom Scrollbar for dark theme */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.5);
-  /* slate-800/50 */
-  border-radius: 4px;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.8);
-  /* slate-600 */
-  border-radius: 4px;
+/* Utilities */
+.pb-safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 1);
-  /* slate-500 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Gradient Mask for scrolling lists */
+.mask-gradient-right {
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.20",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
     "jspdf": "^4.0.0",
