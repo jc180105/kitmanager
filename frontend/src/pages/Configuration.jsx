@@ -171,19 +171,16 @@ export default function Configuration({ apiUrl }) {
                             </div>
                         ) : botStatus.qr ? (
                             <div className="text-center animate-fade-in">
-                                <div className="bg-slate-100 p-6 rounded-lg mb-4 shadow-sm inline-block">
-                                    <MessageSquare className="w-16 h-16 text-slate-400 mx-auto mb-2" />
+                                <div className="bg-white p-2 border-2 border-slate-100 rounded-lg mb-4 shadow-sm inline-block">
+                                    <QRCode value={botStatus.manualQr || botStatus.qr} size={200} />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-700 mb-2">QR Code no Terminal</h3>
-                                <p className="text-slate-600 font-medium text-sm mb-1">
-                                    O QR Code foi gerado no terminal do servidor.
-                                </p>
-                                <p className="text-slate-500 text-xs px-4">
-                                    Verifique a janela onde o backend está rodando para escanear o código.
+                                <h3 className="text-lg font-bold text-slate-700 mb-1">Escaneie para Conectar</h3>
+                                <p className="text-slate-500 text-sm mb-4">
+                                    Abra o WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar Aparelho
                                 </p>
 
-                                <div className="mt-6 border-t border-slate-100 pt-4">
-                                    <p className="text-xs text-slate-400 mb-2">Alternativa: Cole o código do log aqui:</p>
+                                <div className="mt-4 border-t border-slate-100 pt-4">
+                                    <p className="text-xs text-slate-400 mb-2">Problemas? Cole o código do terminal aqui:</p>
                                     <input
                                         type="text"
                                         placeholder="Cole o código (2@...)"
@@ -191,14 +188,6 @@ export default function Configuration({ apiUrl }) {
                                         value={botStatus.manualQr || ''}
                                         onChange={(e) => setBotStatus(s => ({ ...s, manualQr: e.target.value }))}
                                     />
-                                    {botStatus.manualQr && (
-                                        <div className="mt-4 animate-fade-in">
-                                            <div className="bg-white p-2 border-2 border-slate-100 rounded-lg mb-2 shadow-sm inline-block">
-                                                <QRCode value={botStatus.manualQr} size={200} />
-                                            </div>
-                                            <p className="text-emerald-600 font-bold text-sm">Escaneie agora!</p>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         ) : (
