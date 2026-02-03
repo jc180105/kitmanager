@@ -40,10 +40,27 @@ body {
 
 .kitnet-card {
   transition: all 0.2s ease-in-out;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kitnet-card button,
+.kitnet-card a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
 }
 
 .kitnet-card:hover {
   transform: translateY(-2px);
+}
+
+/* Ensure buttons are always clickable on mobile */
+button,
+a {
+  touch-action: manipulation;
 }
 
 .modal-backdrop {

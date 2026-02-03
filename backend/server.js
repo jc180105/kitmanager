@@ -37,10 +37,10 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// Rate Limiting - 100 requests per 15 minutes
+// Rate Limiting - 500 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   message: { error: 'Muitas requisições. Tente novamente em 15 minutos.' }
 });
 app.use(limiter);
@@ -202,7 +202,7 @@ app.get('/kitnets', async (req, res) => {
     let query = `
       SELECT id, numero, status, valor, descricao, 
              inquilino_nome, inquilino_telefone, 
-             data_entrada, dia_vencimento
+             data_entrada, dia_vencimento, pago_mes
       FROM kitnets
     `;
     const params = [];
@@ -791,9 +791,105 @@ app.get('/dashboard/stats', async (req, res) => {
   }
 });
 
+// GET /dashboard/relatorio - Detailed financial report
+app.get('/dashboard/relatorio', async (req, res) => {
+  try {
+    const { periodo } = req.query; // Format: YYYY-MM
+    const today = new Date();
+    const mesAtual = periodo || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+    // Calculate previous month
+    const [year, month] = mesAtual.split('-').map(Number);
+    const prevDate = new Date(year, month - 2, 1);
+    const mesAnterior = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+    // 1. Receita do período
+    const receitaQuery = await pool.query(`
+      SELECT SUM(valor) as total
+      FROM historico_pagamentos
+      WHERE mes_referencia = $1
+    `, [mesAtual]);
+    const receitaAtual = parseFloat(receitaQuery.rows[0].total || 0);
+
+    // 2. Receita do período anterior (para comparação)
+    const receitaAnteriorQuery = await pool.query(`
+      SELECT SUM(valor) as total
+      FROM historico_pagamentos
+      WHERE mes_referencia = $1
+    `, [mesAnterior]);
+    const receitaAnterior = parseFloat(receitaAnteriorQuery.rows[0].total || 0);
+
+    // 3. Despesas por categoria
+    const despesasQuery = await pool.query(`
+      SELECT categoria, SUM(valor) as total, COUNT(*) as quantidade
+      FROM despesas
+      WHERE to_char(data_despesa, 'YYYY-MM') = $1
+      GROUP BY categoria
+      ORDER BY total DESC
+    `, [mesAtual]);
+
+    const despesasTotalAtual = despesasQuery.rows.reduce((sum, d) => sum + parseFloat(d.total), 0);
+
+    // 4. Despesas do período anterior
+    const despesasAnteriorQuery = await pool.query(`
+      SELECT SUM(valor) as total
+      FROM despesas
+      WHERE to_char(data_despesa, 'YYYY-MM') = $1
+    `, [mesAnterior]);
+    const despesasAnterior = parseFloat(despesasAnteriorQuery.rows[0].total || 0);
+
+    // 5. Lista de pagamentos recebidos
+    const pagamentosQuery = await pool.query(`
+      SELECT hp.*, k.numero, k.inquilino_nome
+      FROM historico_pagamentos hp
+      LEFT JOIN kitnets k ON hp.kitnet_id = k.id
+      WHERE hp.mes_referencia = $1
+      ORDER BY hp.data_pagamento DESC
+    `, [mesAtual]);
+
+    // 6. Cálculos
+    const lucroAtual = receitaAtual - despesasTotalAtual;
+    const lucroAnterior = receitaAnterior - despesasAnterior;
+    const variacaoReceita = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior) * 100 : 0;
+    const variacaoDespesas = despesasAnterior > 0 ? ((despesasTotalAtual - despesasAnterior) / despesasAnterior) * 100 : 0;
+    const variacaoLucro = lucroAnterior !== 0 ? ((lucroAtual - lucroAnterior) / Math.abs(lucroAnterior)) * 100 : 0;
+
+    res.json({
+      periodo: mesAtual,
+      periodoAnterior: mesAnterior,
+      receita: {
+        atual: receitaAtual,
+        anterior: receitaAnterior,
+        variacao: Math.round(variacaoReceita * 10) / 10
+      },
+      despesas: {
+        total: despesasTotalAtual,
+        anterior: despesasAnterior,
+        variacao: Math.round(variacaoDespesas * 10) / 10,
+        porCategoria: despesasQuery.rows.map(d => ({
+          categoria: d.categoria,
+          total: parseFloat(d.total),
+          quantidade: parseInt(d.quantidade)
+        }))
+      },
+      lucro: {
+        atual: lucroAtual,
+        anterior: lucroAnterior,
+        variacao: Math.round(variacaoLucro * 10) / 10,
+        margem: receitaAtual > 0 ? Math.round((lucroAtual / receitaAtual) * 100) : 0
+      },
+      pagamentos: pagamentosQuery.rows
+    });
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    res.status(500).json({ error: 'Erro ao gerar relatório financeiro' });
+  }
+});
+
 // ===================
 // ROUTES - DOCUMENTOS
 // ===================
+
 
 // POST /upload - Upload de documento
 app.post('/upload', upload.single('file'), async (req, res) => {
