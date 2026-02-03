@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { User, Phone, Calendar, CreditCard, History, FileText, MessageCircle, Edit } from 'lucide-react';
+import { User, Phone, Calendar, CreditCard, History, FileText, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { generateContract } from '../utils/generateContract';
+import { toast } from 'sonner';
 import MobileDrawer from './MobileDrawer';
 
 function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
@@ -21,6 +22,25 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
             console.error('Erro ao buscar histórico:', error);
         } finally {
             setLoadingHistory(false);
+        }
+    };
+
+    const deletePayment = async (paymentId) => {
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${API_URL}/pagamentos/${paymentId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                setHistory(prev => prev.filter(p => p.id !== paymentId));
+                toast.success('Pagamento removido!');
+            } else {
+                toast.error('Erro ao remover pagamento');
+            }
+        } catch (error) {
+            console.error('Erro ao deletar pagamento:', error);
+            toast.error('Erro ao remover pagamento');
         }
     };
 
@@ -144,21 +164,31 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                         Histórico Recente
                     </h3>
 
-                    <div className="space-y-2 max-h-[120px] overflow-y-auto">
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
                         {loadingHistory ? (
                             <p className="text-slate-500 text-center py-2 text-xs">Carregando...</p>
                         ) : history.length === 0 ? (
                             <p className="text-slate-500 text-center py-2 text-xs">Nenhum pagamento registrado.</p>
                         ) : (
                             history.slice(0, 5).map(rec => (
-                                <div key={rec.id} className="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg text-xs">
+                                <div key={rec.id} className="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg text-xs group">
                                     <div>
                                         <p className="text-white font-medium">{formatCurrency(rec.valor)}</p>
                                         <p className="text-[10px] text-slate-500">Ref: {rec.mes_referencia}</p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-slate-400">{formatDate(rec.data_pagamento)}</p>
-                                        <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1 py-0.5 rounded">Pago</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-slate-400">{formatDate(rec.data_pagamento)}</p>
+                                            <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1 py-0.5 rounded">Pago</span>
+                                        </div>
+                                        {/* Delete Button */}
+                                        <button
+                                            onClick={() => deletePayment(rec.id)}
+                                            className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors opacity-50 hover:opacity-100"
+                                            title="Remover pagamento"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
                                     </div>
                                 </div>
                             ))

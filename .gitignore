@@ -14,6 +14,9 @@ npm-debug.log*
 dist/
 build/
 
+# WhatsApp Session (Baileys)
+backend/auth_info/
+
 # Backup files
 backend/backups/
 

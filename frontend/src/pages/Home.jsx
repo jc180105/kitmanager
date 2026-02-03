@@ -223,7 +223,7 @@ export default function Home() {
             const updatedKitnet = await response.json();
             setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
             triggerHaptic('success');
-            toast.success('Status de pagamento atualizado!');
+            // Status atualizado silenciosamente
         } catch (err) {
             toast.error(err.message);
         }
@@ -368,10 +368,8 @@ export default function Home() {
                             kitnet={kitnet}
                             onSelect={() => { triggerHaptic('light'); setSelectedKitnet(kitnet); }}
                             onToggle={() => handleToggleClick(kitnet)}
-                            onEdit={() => { triggerHaptic('light'); setEditingKitnet(kitnet); }}
-                            onEditTenant={() => { triggerHaptic('light'); setTenantKitnet(kitnet); }}
                             onTogglePayment={() => togglePayment(kitnet.id)}
-                            onShowHistory={() => { triggerHaptic('light'); setHistoryKitnet(kitnet); }}
+                            onEditTenant={() => { triggerHaptic('light'); setTenantKitnet(kitnet); }}
                         />
                     ))}
                 </div>

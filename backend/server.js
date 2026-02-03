@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const pool = require('./config/database');
 const initScheduler = require('./services/scheduler');
+const { initWhatsApp } = require('./services/whatsapp');
 
 // Routes
 const kitnetsRoutes = require('./routes/kitnets');
@@ -77,7 +78,7 @@ const initDb = async () => {
 };
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Trust proxy - Required for Railway/Heroku/etc (behind reverse proxy)
 app.set('trust proxy', 1);
@@ -88,11 +89,12 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
+// Rate Limiting (Disabled for dev)
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 1000 // limit each IP to 1000 requests per windowMs
+// });
+// app.use(limiter);
 
 // Database Connection & Init
 pool.connect((err, client, release) => {
@@ -107,6 +109,15 @@ pool.connect((err, client, release) => {
 
 // Initialize Scheduler (Cron Jobs)
 initScheduler();
+
+// Initialize WhatsApp Bot (se OPENAI_API_KEY estiver configurada)
+if (process.env.OPENAI_API_KEY) {
+  initWhatsApp().catch(err => {
+    console.error('⚠️ Erro ao iniciar WhatsApp Bot:', err.message);
+  });
+} else {
+  console.log('ℹ️ WhatsApp Bot desativado (OPENAI_API_KEY não configurada)');
+}
 
 // API Routes
 app.get('/', (req, res) => {

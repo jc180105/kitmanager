@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, User, Phone, Calendar, CreditCard, History,
-    FileText, MessageCircle, Edit, Loader2, DollarSign, CheckCircle, Pencil
+    FileText, MessageCircle, Edit, Loader2, DollarSign, CheckCircle, Pencil, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_URL } from '../utils/config';
@@ -61,10 +61,25 @@ export default function KitnetDetails() {
             if (!response.ok) throw new Error('Erro ao atualizar pagamento');
             const updated = await response.json();
             setKitnet(updated);
-            toast.success('Status de pagamento atualizado!');
             fetchHistory();
         } catch (error) {
             toast.error(error.message);
+        }
+    };
+
+    const deletePayment = async (paymentId) => {
+        try {
+            const response = await fetch(`${API_URL}/pagamentos/${paymentId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                setHistory(prev => prev.filter(p => p.id !== paymentId));
+                toast.success('Pagamento removido!');
+            } else {
+                toast.error('Erro ao remover pagamento');
+            }
+        } catch (error) {
+            toast.error('Erro ao remover pagamento');
         }
     };
 
@@ -267,11 +282,20 @@ export default function KitnetDetails() {
                                     <p className="text-white font-medium text-sm">{formatCurrency(rec.valor)}</p>
                                     <p className="text-xs text-slate-500">Ref: {rec.mes_referencia}</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-xs text-slate-400">{formatDate(rec.data_pagamento)}</p>
-                                    <span className="text-xs text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
-                                        Pago
-                                    </span>
+                                <div className="flex items-center gap-2">
+                                    <div className="text-right">
+                                        <p className="text-xs text-slate-400">{formatDate(rec.data_pagamento)}</p>
+                                        <span className="text-xs text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                                            Pago
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => deletePayment(rec.id)}
+                                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                        title="Remover pagamento"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
                         ))
