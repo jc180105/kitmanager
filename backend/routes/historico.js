@@ -21,6 +21,7 @@ router.get('/', async (req, res) => {
                 END as titulo, 
                 h.status_anterior as detalhe_1, 
                 h.status_novo as detalhe_2, 
+                null as detalhe_3,
                 h.data_alteracao as data, 
                 'alteracao' as tipo,
                 COALESCE(k.numero, h.kitnet_numero, 0) as kitnet_numero
@@ -34,7 +35,8 @@ router.get('/', async (req, res) => {
                 p.kitnet_id, 
                 'Pagamento Recebido' as titulo, 
                 p.mes_referencia as detalhe_1, 
-                CAST(p.valor AS VARCHAR) as detalhe_2, 
+                CONCAT('R$ ', p.valor, CASE WHEN p.forma_pagamento IS NOT NULL THEN ' (' || p.forma_pagamento || ')' ELSE '' END) as detalhe_2, 
+                p.forma_pagamento as detalhe_3,
                 p.data_pagamento as data, 
                 'pagamento' as tipo,
                 COALESCE(k.numero, 0) as kitnet_numero

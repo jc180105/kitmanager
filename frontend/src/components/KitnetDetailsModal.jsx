@@ -174,7 +174,14 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
                                 <div key={rec.id} className="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg text-xs group">
                                     <div>
                                         <p className="text-white font-medium">{formatCurrency(rec.valor)}</p>
-                                        <p className="text-[10px] text-slate-500">Ref: {rec.mes_referencia}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-slate-500">Ref: {rec.mes_referencia}</p>
+                                            {rec.forma_pagamento && (
+                                                <span className="text-[9px] px-1.5 py-0.5 bg-slate-700 rounded text-slate-300 border border-slate-600">
+                                                    {rec.forma_pagamento}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="text-right">

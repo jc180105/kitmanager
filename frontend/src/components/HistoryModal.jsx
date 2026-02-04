@@ -99,28 +99,42 @@ function HistoryModal({ onClose }) {
                                         className="p-4 bg-slate-700/30 rounded-xl"
                                     >
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-white font-medium">
-                                                Kitnet {item.kitnet_numero}
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className="text-white font-medium text-sm">
+                                                    {item.titulo} - Kitnet {item.kitnet_numero}
+                                                </span>
+                                                <span className="text-xs text-slate-500">
+                                                    {item.tipo === 'pagamento' ? `Ref: ${item.detalhe_1}` : 'Mudança de Status'}
+                                                </span>
+                                            </div>
                                             <span className="text-xs text-slate-400">
-                                                {formatDate(item.data_alteracao)}
+                                                {formatDate(item.data)}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status_anterior === 'livre'
+
+                                        {item.tipo === 'alteracao' ? (
+                                            <div className="flex items-center gap-2 text-sm mt-2">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.detalhe_1 === 'livre'
                                                     ? 'bg-emerald-500/20 text-emerald-400'
                                                     : 'bg-red-500/20 text-red-400'
-                                                }`}>
-                                                {item.status_anterior?.toUpperCase()}
-                                            </span>
-                                            <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status_novo === 'livre'
+                                                    }`}>
+                                                    {item.detalhe_1?.toUpperCase()}
+                                                </span>
+                                                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.detalhe_2 === 'livre'
                                                     ? 'bg-emerald-500/20 text-emerald-400'
                                                     : 'bg-red-500/20 text-red-400'
-                                                }`}>
-                                                {item.status_novo?.toUpperCase()}
-                                            </span>
-                                        </div>
+                                                    }`}>
+                                                    {item.detalhe_2?.toUpperCase()}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm font-semibold">
+                                                    {item.detalhe_2}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

@@ -140,7 +140,7 @@ function KitnetCard({ kitnet, onToggle, onSelect, onTogglePayment, onEditTenant 
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                onTogglePayment?.();
+                                navigate(`/kitnet/${kitnet.id}/pagamento`);
                             }}
                             className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${isPago
                                 ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
@@ -174,7 +174,7 @@ function KitnetCard({ kitnet, onToggle, onSelect, onTogglePayment, onEditTenant 
                                 if (isMobile) {
                                     navigate(`/kitnet/${kitnet.id}/inquilino`);
                                 } else {
-                                    onEditTenant?.();
+                                    onEditTenant?.(e);
                                 }
                             }}
                             className="flex items-center justify-center w-9 h-9 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"

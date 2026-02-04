@@ -9,6 +9,7 @@ const HistoryPage = lazy(() => import('./pages/History'));
 const MenuPage = lazy(() => import('./pages/Menu'));
 const KitnetDetails = lazy(() => import('./pages/KitnetDetails'));
 const KitnetTenant = lazy(() => import('./pages/KitnetTenant'));
+const KitnetPayment = lazy(() => import('./pages/KitnetPayment'));
 const KitnetEdit = lazy(() => import('./pages/KitnetEdit'));
 const Configuration = lazy(() => import('./pages/Configuration'));
 
@@ -31,6 +32,7 @@ function App() {
             <Route path="menu" element={<MenuPage />} />
             <Route path="kitnet/:id" element={<KitnetDetails />} />
             <Route path="kitnet/:id/inquilino" element={<KitnetTenant />} />
+            <Route path="kitnet/:id/pagamento" element={<KitnetPayment />} />
             <Route path="kitnet/:id/editar" element={<KitnetEdit />} />
             <Route path="config" element={<Configuration />} />
           </Route>

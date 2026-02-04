@@ -52,7 +52,8 @@ const initDb = async () => {
         kitnet_id INTEGER REFERENCES kitnets(id) ON DELETE SET NULL,
         valor DECIMAL(10, 2) NOT NULL,
         data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        mes_referencia VARCHAR(7)
+        mes_referencia VARCHAR(7),
+        forma_pagamento VARCHAR(50)
       );
 
       CREATE TABLE IF NOT EXISTS despesas (

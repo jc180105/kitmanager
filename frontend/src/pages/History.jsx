@@ -205,6 +205,11 @@ export default function HistoryPage() {
                                                     <p className="text-xs text-slate-500 mt-0.5">
                                                         {formatDate(item.data || item.data_alteracao)}
                                                     </p>
+                                                    {item.tipo === 'pagamento' && item.detalhe_3 && (
+                                                        <p className="text-[10px] text-emerald-400/80 mt-1">
+                                                            📱 {item.detalhe_3}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -262,6 +267,12 @@ export default function HistoryPage() {
                                                             <p className="text-[10px] text-slate-500 uppercase tracking-wider">ID Registro</p>
                                                             <p className="text-slate-400 font-mono text-xs">#{item.id}</p>
                                                         </div>
+                                                        {item.detalhe_3 && (
+                                                            <div className="col-span-2 sm:col-span-4">
+                                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Forma de Pagamento</p>
+                                                                <p className="text-emerald-400 font-medium text-sm">{item.detalhe_3}</p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

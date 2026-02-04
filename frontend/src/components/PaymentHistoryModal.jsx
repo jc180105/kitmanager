@@ -107,9 +107,17 @@ function PaymentHistoryModal({ kitnet, onClose }) {
                                     </div>
                                     <div>
                                         <p className="text-white font-medium">{formatCurrency(record.valor)}</p>
-                                        <p className="text-xs text-slate-400">
-                                            Ref: {record.mes_referencia || '-'}
-                                        </p>
+                                        <div className="flex flex-col gap-0.5">
+                                            <p className="text-xs text-slate-400">
+                                                Ref: {record.mes_referencia || '-'}
+                                            </p>
+                                            {record.forma_pagamento && (
+                                                <p className="text-[11px] text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
+                                                    <span>💳</span>
+                                                    {record.forma_pagamento}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 sm:gap-3">

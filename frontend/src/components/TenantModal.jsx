@@ -44,7 +44,7 @@ const formatDateForInput = (dateValue) => {
     return '';
 };
 
-function TenantModal({ kitnet, onSave, onClose }) {
+function TenantModal({ kitnet, onSave, onClose, triggerRect }) {
     const [formData, setFormData] = useState({
         inquilino_nome: kitnet.inquilino_nome || '',
         inquilino_telefone: kitnet.inquilino_telefone || '',
@@ -104,6 +104,7 @@ function TenantModal({ kitnet, onSave, onClose }) {
             isOpen={true}
             onClose={onClose}
             title={`Inquilino - Kitnet ${kitnet.numero}`}
+            triggerRect={triggerRect}
         >
             <div className="space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-4">

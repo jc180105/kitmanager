@@ -13,7 +13,8 @@ router.get('/:id', async (req, res) => {
         }
 
         const result = await pool.query(
-            `SELECT * FROM historico_pagamentos 
+            `SELECT id, kitnet_id, valor, mes_referencia, data_pagamento, forma_pagamento
+       FROM historico_pagamentos 
        WHERE kitnet_id = $1 
        ORDER BY data_pagamento DESC`,
             [id]

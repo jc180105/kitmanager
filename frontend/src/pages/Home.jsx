@@ -6,6 +6,7 @@ import KitnetCard from '../components/KitnetCard';
 import EditModal from '../components/EditModal';
 import TenantModal from '../components/TenantModal';
 import PaymentHistoryModal from '../components/PaymentHistoryModal';
+import PaymentConfirmDialog from '../components/PaymentConfirmDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import KitnetDetailsModal from '../components/KitnetDetailsModal';
 import KitnetSkeleton from '../components/KitnetSkeleton';
@@ -21,6 +22,7 @@ export default function Home() {
     const [historyKitnet, setHistoryKitnet] = useState(null);
     const [selectedKitnet, setSelectedKitnet] = useState(null);
     const [confirmDialog, setConfirmDialog] = useState(null);
+    const [paymentDialog, setPaymentDialog] = useState(null);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -208,11 +210,46 @@ export default function Home() {
         }
     };
 
-    const togglePayment = async (id) => {
+    const togglePayment = (id, e = null) => {
+        const kitnet = kitnets.find(k => k.id === id);
+        if (!kitnet) return;
+
+        // Se já está pago, apenas alterna para não pago sem perguntar forma de pagamento
+        if (kitnet.pago_mes) {
+            executeTogglePayment(id);
+            return;
+        }
+
+        // Calculate position if event is provided
+        let triggerRect = null;
+        if (e && e.currentTarget) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            triggerRect = {
+                top: rect.bottom + window.scrollY,
+                left: rect.left + window.scrollX,
+                width: rect.width,
+                height: rect.height
+            };
+        }
+
+        // Se vai pagar, pergunta a forma
+        triggerHaptic('medium');
+        setPaymentDialog({
+            title: 'Confirmar Pagamento',
+            message: `Registrar pagamento da Kitnet ${kitnet.numero}?`,
+            onConfirm: (method) => executeTogglePayment(id, method),
+            triggerRect // Pass the calculated position
+        });
+    };
+
+    const executeTogglePayment = async (id, formaPagamento = null) => {
+        setPaymentDialog(null);
         triggerHaptic('medium');
         try {
             const response = await fetch(`${API_URL}/kitnets/${id}/pagamento`, {
                 method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ forma_pagamento: formaPagamento }),
             });
 
             if (!response.ok) {
@@ -222,8 +259,18 @@ export default function Home() {
 
             const updatedKitnet = await response.json();
             setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
+
+            // Se estava selecionada nos detalhes, atualiza também
+            if (selectedKitnet && selectedKitnet.id === id) {
+                setSelectedKitnet(updatedKitnet);
+            }
+
             triggerHaptic('success');
-            // Status atualizado silenciosamente
+            if (formaPagamento) {
+                toast.success(`Pagamento registrado via ${formaPagamento}!`);
+            } else {
+                toast.success('Status de pagamento atualizado!');
+            }
         } catch (err) {
             toast.error(err.message);
         }
@@ -368,8 +415,18 @@ export default function Home() {
                             kitnet={kitnet}
                             onSelect={() => { triggerHaptic('light'); setSelectedKitnet(kitnet); }}
                             onToggle={() => handleToggleClick(kitnet)}
-                            onTogglePayment={() => togglePayment(kitnet.id)}
-                            onEditTenant={() => { triggerHaptic('light'); setTenantKitnet(kitnet); }}
+                            onTogglePayment={(e) => togglePayment(kitnet.id, e)}
+                            onEditTenant={(e) => {
+                                triggerHaptic('light');
+                                const rect = e?.currentTarget?.getBoundingClientRect();
+                                const triggerRect = rect ? {
+                                    top: rect.bottom + window.scrollY,
+                                    left: rect.left + window.scrollX,
+                                    width: rect.width,
+                                    height: rect.height
+                                } : null;
+                                setTenantKitnet({ ...kitnet, triggerRect });
+                            }}
                         />
                     ))}
                 </div>
@@ -401,6 +458,7 @@ export default function Home() {
                     kitnet={tenantKitnet}
                     onSave={updateTenant}
                     onClose={() => setTenantKitnet(null)}
+                    triggerRect={tenantKitnet.triggerRect}
                 />
             )}
 
@@ -411,6 +469,7 @@ export default function Home() {
                 />
             )}
 
+// ... (keeping existing components)
             {selectedKitnet && (
                 <KitnetDetailsModal
                     kitnet={selectedKitnet}
@@ -424,6 +483,13 @@ export default function Home() {
                 <ConfirmDialog
                     {...confirmDialog}
                     onCancel={() => setConfirmDialog(null)}
+                />
+            )}
+
+            {paymentDialog && (
+                <PaymentConfirmDialog
+                    {...paymentDialog}
+                    onCancel={() => setPaymentDialog(null)}
                 />
             )}
 

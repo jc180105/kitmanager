@@ -220,6 +220,7 @@ router.put('/:id/inquilino', async (req, res) => {
 // PUT /kitnets/:id/pagamento - Toggle status de pagamento
 router.put('/:id/pagamento', async (req, res) => {
     const { id } = req.params;
+    const { forma_pagamento } = req.body; // Optional: 'Dinheiro', 'Pix - Nubank', 'Pix - Bradesco'
 
     if (!validateId(id)) {
         return res.status(400).json({ error: 'ID inválido' });
@@ -256,11 +257,11 @@ router.put('/:id/pagamento', async (req, res) => {
 
             if (existing.rows.length === 0) {
                 await pool.query(
-                    `INSERT INTO historico_pagamentos (kitnet_id, valor, mes_referencia) 
-           VALUES ($1, $2, $3)`,
-                    [id, valor, mesReferencia]
+                    `INSERT INTO historico_pagamentos (kitnet_id, valor, mes_referencia, forma_pagamento) 
+           VALUES ($1, $2, $3, $4)`,
+                    [id, valor, mesReferencia, forma_pagamento || null]
                 );
-                console.log(`💰 Pagamento registrado: Kitnet ${result.rows[0].numero}`);
+                console.log(`💰 Pagamento registrado: Kitnet ${result.rows[0].numero} via ${forma_pagamento || 'N/A'}`);
             }
         }
 
