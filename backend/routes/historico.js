@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
                 p.kitnet_id, 
                 'Pagamento Recebido' as titulo, 
                 p.mes_referencia as detalhe_1, 
-                CONCAT('R$ ', p.valor) as detalhe_2, 
+                p.valor as detalhe_2, 
                 p.data_pagamento as data, 
                 'pagamento' as tipo,
                 COALESCE(k.numero, 0) as kitnet_numero
