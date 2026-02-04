@@ -207,7 +207,7 @@ export default function HistoryPage() {
                                                     </p>
                                                     {item.tipo === 'pagamento' && item.detalhe_3 && (
                                                         <p className="text-[10px] text-emerald-400/80 mt-1">
-                                                            📱 {item.detalhe_3}
+                                                            💳 {item.detalhe_3}
                                                         </p>
                                                     )}
                                                 </div>
