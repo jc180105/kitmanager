@@ -140,7 +140,13 @@ function KitnetCard({ kitnet, onToggle, onSelect, onTogglePayment, onEditTenant 
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                navigate(`/kitnet/${kitnet.id}/pagamento`);
+                                // If already paid, just toggle to pending
+                                if (isPago) {
+                                    onTogglePayment?.(e);
+                                } else {
+                                    // If pending, navigate to payment page to register payment
+                                    navigate(`/kitnet/${kitnet.id}/pagamento`);
+                                }
                             }}
                             className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${isPago
                                 ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
