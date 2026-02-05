@@ -7,8 +7,9 @@ export const getApiUrl = () => {
         return 'https://kitmanager-production.up.railway.app';
     }
 
-    // 3. Localhost Fallback
-    return 'http://localhost:3001';
+    // 3. Localhost Fallback - UPDATED: Default to Railway Backend as user has no local backend
+    return 'https://kitmanager-production.up.railway.app';
+    // return 'http://localhost:3001'; 
 };
 
 export const API_URL = getApiUrl();

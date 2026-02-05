@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const OpenAI = require('openai');
-const { gerarResposta } = require('./aiAgent');
+const { gerarResposta, transcreverAudio } = require('./aiAgent');
 
 let sock = null;
 let currentQR = null;
