@@ -172,4 +172,5 @@ app.use((err, req, res, next) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log('✅ VERSÃO ATUALIZADA: WhatsApp TOTALMENTE REMOVIDO deste serviço.');
 });
