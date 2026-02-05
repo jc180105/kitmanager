@@ -81,10 +81,10 @@ export default function WhatsAppConfig() {
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-white">Status da Conexão</h2>
                         <div className={`px-4 py-2 rounded-full text-sm font-medium ${status === 'connected'
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : status === 'waiting'
-                                    ? 'bg-yellow-500/20 text-yellow-400'
-                                    : 'bg-red-500/20 text-red-400'
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : status === 'waiting'
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : 'bg-red-500/20 text-red-400'
                             }`}>
                             {status === 'connected' && '✓ Conectado'}
                             {status === 'waiting' && '⏳ Aguardando Conexão'}

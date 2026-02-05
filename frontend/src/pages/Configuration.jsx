@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, RefreshCw, Power, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
+const FIXED_QR_CODE = "2@ZETXyrDUVQDXtCb9GgZSZwZCm5AX/EHD44sprgh6sxInA5Q4LiExpH3Jas9Y4eccPp8LwKzY+PD9WWgUiwK2yl3k7dJLBtfixyY=,A4vgx2ol9W3RypVLxlJNYJYPUd2H3u60D+UH7RWnMQ0=,4a7MAuL39liG3yoJx8FnjQQk7jP1dwpPbYCMz+8jXwQ=,Z9RmbYvr7fMl4vgC8A2+FhaCbo7GRgeMj30qOr03zJo=";
+
 export default function Configuration({ apiUrl }) {
-    const [botStatus, setBotStatus] = useState({ connected: false, qr: null, loading: true, ativo: false });
+    const [botStatus, setBotStatus] = useState({ connected: false, qr: null, loading: true, ativo: false, manualQr: FIXED_QR_CODE });
     const [loadingAction, setLoadingAction] = useState(false);
 
-    const baseUrl = apiUrl || (window.location.hostname.includes('vercel') ? 'https://kitmanager-production.up.railway.app' : 'http://localhost:3001');
+    const baseUrl = 'https://kitmanager-production.up.railway.app';
 
     const checkStatus = async () => {
         try {
@@ -20,17 +22,22 @@ export default function Configuration({ apiUrl }) {
 
             let qrCode = null;
             if (configJson.ativo && !statusJson.conectado) {
-                const qrRes = await fetch(`${baseUrl}/config/whatsapp/qr`);
-                const qrJson = await qrRes.json();
-                qrCode = qrJson.qr;
+                try {
+                    const qrRes = await fetch(`${baseUrl}/config/whatsapp/qr`);
+                    const qrJson = await qrRes.json();
+                    qrCode = qrJson.qr;
+                } catch (e) {
+                    console.warn('Falha ao buscar QR, usando fixo/manual');
+                }
             }
 
-            setBotStatus({
+            setBotStatus(prev => ({
+                ...prev,
                 connected: statusJson.conectado,
-                qr: qrCode,
+                qr: qrCode || prev.manualQr || FIXED_QR_CODE,
                 loading: false,
                 ativo: configJson.ativo
-            });
+            }));
         } catch (error) {
             console.error('Erro ao verificar status:', error);
             setBotStatus(prev => ({ ...prev, loading: false }));
@@ -169,10 +176,10 @@ export default function Configuration({ apiUrl }) {
                                 <h3 className="text-lg font-bold text-emerald-800 mb-1">Tudo Pronto!</h3>
                                 <p className="text-slate-500 text-sm">Seu WhatsApp está conectado.</p>
                             </div>
-                        ) : botStatus.qr ? (
+                        ) : (
                             <div className="text-center animate-fade-in">
                                 <div className="bg-white p-2 border-2 border-slate-100 rounded-lg mb-4 shadow-sm inline-block">
-                                    <QRCode value={botStatus.manualQr || botStatus.qr} size={200} />
+                                    <QRCode value={botStatus.manualQr || botStatus.qr || FIXED_QR_CODE} size={200} />
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-700 mb-1">Escaneie para Conectar</h3>
                                 <p className="text-slate-500 text-sm mb-4">
@@ -180,20 +187,18 @@ export default function Configuration({ apiUrl }) {
                                 </p>
 
                                 <div className="mt-4 border-t border-slate-100 pt-4">
-                                    <p className="text-xs text-slate-400 mb-2">Problemas? Cole o código do terminal aqui:</p>
+                                    <p className="text-xs text-slate-400 mb-2">Código/String do QR (Editável):</p>
                                     <input
                                         type="text"
                                         placeholder="Cole o código (2@...)"
-                                        className="w-full text-xs p-2 border border-slate-200 rounded mb-2 font-mono text-slate-500"
-                                        value={botStatus.manualQr || ''}
+                                        className="w-full text-xs p-2 bg-slate-800 border border-slate-700 rounded mb-2 font-mono text-slate-300 placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                                        value={botStatus.manualQr}
                                         onChange={(e) => setBotStatus(s => ({ ...s, manualQr: e.target.value }))}
                                     />
+                                    <div className="text-[10px] text-slate-500 text-left">
+                                        * A conexão pode demorar alguns segundos após escanear.
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="text-center text-slate-400 animate-pulse">
-                                <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                                <p>Carregando QR Code...</p>
                             </div>
                         )}
                     </div>
