@@ -73,6 +73,12 @@ const initDb = async () => {
         data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    // Migration: Ensure forma_pagamento exists (for existing tables)
+    await pool.query(`
+      ALTER TABLE historico_pagamentos 
+      ADD COLUMN IF NOT EXISTS forma_pagamento VARCHAR(50);
+    `);
+
     console.log('✅ Tabelas verificadas/criadas com sucesso.');
   } catch (error) {
     console.error('❌ Erro ao inicializar banco de dados:', error);
