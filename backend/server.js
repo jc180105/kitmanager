@@ -161,6 +161,7 @@ app.use('/despesas', despesasRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/backup', backupRoutes);
 app.use('/config', configRoutes);
+app.use('/leads', require('./routes/leads'));
 app.use('/', documentosRoutes); // Mounts at root because it defines mixed paths
 
 // Error Handling Middleware

@@ -63,6 +63,22 @@ export default function MenuPage() {
                             </div>
                         </Link>
 
+                        <MenuCard
+                            icon={MessageCircle}
+                            title="Bot WhatsApp"
+                            desc="Configurar assistente"
+                            to="/whatsapp"
+                            color="emerald"
+                        />
+
+                        <MenuCard
+                            icon={User}
+                            title="Leads / Interessados"
+                            desc="Ver quem entrou em contato"
+                            to="/leads"
+                            color="blue"
+                        />
+
                         <a
                             href={`${API_URL}/backup`}
                             target="_blank"
