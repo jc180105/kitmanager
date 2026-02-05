@@ -72,15 +72,10 @@ router.put('/whatsapp', async (req, res) => {
 
 // GET /config/whatsapp/status - Status da conexão
 router.get('/whatsapp/status', async (req, res) => {
-    try {
-        const { isConnected } = require('../services/whatsapp');
-        res.json({
-            conectado: isConnected(),
-            message: isConnected() ? 'Conectado ao WhatsApp' : 'Desconectado'
-        });
-    } catch (e) {
-        res.json({ conectado: false, message: 'Módulo WhatsApp não disponível' });
-    }
+    res.json({
+        conectado: false,
+        message: 'WhatsApp roda em serviço separado (bot whatsapp).'
+    });
 });
 
 
@@ -93,12 +88,7 @@ router.post('/whatsapp/reset', async (req, res) => {
 
 // GET /config/whatsapp/qr - Obtém o código QR atual
 router.get('/whatsapp/qr', (req, res) => {
-    try {
-        const { getQR } = require('../services/whatsapp');
-        res.json({ qr: getQR() });
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao obter QR Code' });
-    }
+    res.json({ qr: null, message: 'Veja o QR Code no serviço "bot whatsapp"' });
 });
 
 module.exports = router;
