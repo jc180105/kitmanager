@@ -5,7 +5,7 @@ import QRCode from 'react-qr-code';
 const FIXED_QR_CODE = "2@ZETXyrDUVQDXtCb9GgZSZwZCm5AX/EHD44sprgh6sxInA5Q4LiExpH3Jas9Y4eccPp8LwKzY+PD9WWgUiwK2yl3k7dJLBtfixyY=,A4vgx2ol9W3RypVLxlJNYJYPUd2H3u60D+UH7RWnMQ0=,4a7MAuL39liG3yoJx8FnjQQk7jP1dwpPbYCMz+8jXwQ=,Z9RmbYvr7fMl4vgC8A2+FhaCbo7GRgeMj30qOr03zJo=";
 
 export default function Configuration({ apiUrl }) {
-    const [botStatus, setBotStatus] = useState({ connected: false, qr: null, loading: true, ativo: false, manualQr: FIXED_QR_CODE });
+    const [botStatus, setBotStatus] = useState({ connected: false, qr: null, loading: true, ativo: false, manualQr: '' });
     const [loadingAction, setLoadingAction] = useState(false);
 
     const baseUrl = 'https://kitmanager-production.up.railway.app';

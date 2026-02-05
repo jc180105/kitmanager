@@ -72,10 +72,16 @@ router.put('/whatsapp', async (req, res) => {
 
 // GET /config/whatsapp/status - Status da conexão
 router.get('/whatsapp/status', async (req, res) => {
-    res.json({
-        conectado: false,
-        message: 'WhatsApp roda em serviço separado (bot whatsapp).'
-    });
+    try {
+        const result = await pool.query("SELECT valor FROM config WHERE chave = 'whatsapp_status'");
+        const status = result.rows[0]?.valor;
+        res.json({
+            conectado: status === 'connected',
+            message: status === 'connected' ? 'WhatsApp conectado' : 'Desconectado'
+        });
+    } catch (error) {
+        res.json({ conectado: false, message: 'Status desconhecido' });
+    }
 });
 
 
@@ -87,8 +93,14 @@ router.post('/whatsapp/reset', async (req, res) => {
 });
 
 // GET /config/whatsapp/qr - Obtém o código QR atual
-router.get('/whatsapp/qr', (req, res) => {
-    res.json({ qr: null, message: 'Veja o QR Code no serviço "bot whatsapp"' });
+router.get('/whatsapp/qr', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT valor FROM config WHERE chave = 'whatsapp_qr'");
+        const qr = result.rows[0]?.valor;
+        res.json({ qr, message: qr ? 'QR Code disponível' : 'Aguardando QR Code...' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar QR' });
+    }
 });
 
 module.exports = router;

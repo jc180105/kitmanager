@@ -67,6 +67,12 @@ async function initWhatsApp() {
         browser: ['KitManager Bot', 'Chrome', '1.0.0']
     });
 
+    const pool = require('../config/database');
+
+    // ... imports remain the same
+
+    // ... inside initWhatsApp ...
+
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
@@ -77,6 +83,20 @@ async function initWhatsApp() {
             console.log('📱 ESCANIE O QR CODE ABAIXO COM SEU WHATSAPP:');
             console.log('================================================================================\n');
             qrcode.generate(qr, { small: true });
+
+            // SAVE QR TO DATABASE
+            try {
+                await pool.query(`
+                    INSERT INTO config (chave, valor, atualizado_em) 
+                    VALUES ('whatsapp_qr', $1, CURRENT_TIMESTAMP)
+                    ON CONFLICT (chave) 
+                    DO UPDATE SET valor = $1, atualizado_em = CURRENT_TIMESTAMP
+                `, [qr]);
+                console.log('✅ QR Code salvo no banco de dados!');
+            } catch (err) {
+                console.error('Erro ao salvar QR no banco:', err);
+            }
+
             console.log('\n================================================================================');
             console.log('Caso a imagem acima nao apareca ou esteja distorcida, use a string abaixo:');
             console.log(qr);
@@ -86,13 +106,33 @@ async function initWhatsApp() {
 
         if (connection === 'open') {
             currentQR = null; // Limpa QR Code após conectar
-            console.log('✅ WhatsApp conectado com sucesso!');
+
+            // CLEAR QR & SET STATUS CONNECTED
+            try {
+                await pool.query(`
+                    INSERT INTO config (chave, valor, atualizado_em) VALUES 
+                    ('whatsapp_qr', null, CURRENT_TIMESTAMP),
+                    ('whatsapp_status', 'connected', CURRENT_TIMESTAMP)
+                    ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor, atualizado_em = CURRENT_TIMESTAMP
+                `);
+            } catch (err) { console.error('Erro ao atualizar status DB (Open):', err); }
+
             console.log('✅ WhatsApp conectado com sucesso!');
             console.log('🤖 Bot pronto para receber mensagens.\n');
         }
 
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+
+            // SET STATUS DISCONNECTED
+            try {
+                await pool.query(`
+                    INSERT INTO config (chave, valor, atualizado_em) 
+                    VALUES ('whatsapp_status', 'disconnected', CURRENT_TIMESTAMP)
+                    ON CONFLICT (chave) DO UPDATE SET valor = 'disconnected', atualizado_em = CURRENT_TIMESTAMP
+                `);
+            } catch (err) { console.error('Erro ao atualizar status DB (Close):', err); }
+
             if (shouldReconnect) {
                 console.log('⚠️ Conexão perdida. Reconectando...');
                 await initWhatsApp();
