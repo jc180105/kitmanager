@@ -112,7 +112,9 @@ pool.connect((err, client, release) => {
 // Initialize Scheduler (Cron Jobs)
 initScheduler();
 
-// Initialize WhatsApp Bot condicionalmente baseado na config do banco
+// WhatsApp Bot agora roda em serviço separado no Railway!
+// Não precisa mais inicializar aqui.
+/*
 const initWhatsAppConditional = async () => {
   try {
     const result = await pool.query("SELECT valor FROM config WHERE chave = 'whatsapp_ativo'");
@@ -139,6 +141,9 @@ const initWhatsAppConditional = async () => {
 
 // Aguardar DB inicializar antes de checar config do WhatsApp
 setTimeout(() => initWhatsAppConditional(), 3000);
+*/
+
+console.log('ℹ️ WhatsApp Bot roda em serviço separado (bot whatsapp)');
 
 // API Routes
 app.get('/', (req, res) => {
