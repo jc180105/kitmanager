@@ -32,16 +32,10 @@ function KitnetCard({ kitnet, onToggle, onSelect, onTogglePayment, onEditTenant 
         return `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
     };
 
-    // Handle card click - navigate on mobile, modal on desktop
+    // Handle card click - always navigate to details page
     const handleCardClick = (e) => {
         if (e.target.closest('button') || e.target.closest('a')) return;
-
-        const isMobile = window.innerWidth < 768;
-        if (isMobile) {
-            navigate(`/kitnet/${kitnet.id}`);
-        } else if (onSelect) {
-            onSelect();
-        }
+        navigate(`/kitnet/${kitnet.id}`);
     };
 
     return (
@@ -171,17 +165,12 @@ function KitnetCard({ kitnet, onToggle, onSelect, onTogglePayment, onEditTenant 
                             </a>
                         )}
 
-                        {/* Tenant Button */}
+                        {/* Tenant Button - Always navigate to page */}
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const isMobile = window.innerWidth < 768;
-                                if (isMobile) {
-                                    navigate(`/kitnet/${kitnet.id}/inquilino`);
-                                } else {
-                                    onEditTenant?.(e);
-                                }
+                                navigate(`/kitnet/${kitnet.id}/inquilino`);
                             }}
                             className="flex items-center justify-center w-9 h-9 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
                             title="Editar Inquilino"

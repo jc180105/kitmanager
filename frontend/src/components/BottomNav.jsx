@@ -14,8 +14,8 @@ function BottomNav() {
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-lg border-t border-slate-800 pb-safe-area-bottom md:hidden safe-area-padding-bottom">
-            <div className="flex items-center justify-between px-6 h-16">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/50 pb-safe-area-bottom w-full">
+            <div className="flex items-center justify-between px-6 h-16 md:h-20">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = tab.matchExact
@@ -26,14 +26,20 @@ function BottomNav() {
                         <Link
                             key={tab.id}
                             to={tab.path}
-                            className={`flex flex-col items-center justify-center space-y-1 transition-colors ${isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+                            className={`relative flex flex-col items-center justify-center space-y-1 transition-all duration-300 w-full group ${isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
                                 }`}
                         >
-                            <div className={`p-1.5 rounded-full transition-all duration-300 ${isActive ? 'bg-emerald-500/10 scale-110' : ''
+                            {isActive && (
+                                <div className="absolute -top-[17px] left-1/2 -translate-x-1/2 w-8 h-1 bg-emerald-500 rounded-b-full shadow-[0_2px_12px_rgba(16,185,129,0.5)]" />
+                            )}
+
+                            <div className={`p-1.5 rounded-2xl transition-all duration-300 ${isActive ? 'bg-emerald-500/10' : 'group-hover:bg-slate-800'
                                 }`}>
-                                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                                <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'stroke-[2.5px] scale-110' : 'stroke-[2px] group-hover:scale-110'}`} />
                             </div>
-                            <span className="text-[10px] font-medium">{tab.label}</span>
+                            <span className={`text-[10px] font-medium transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-70 group-hover:opacity-100'}`}>
+                                {tab.label}
+                            </span>
                         </Link>
                     );
                 })}

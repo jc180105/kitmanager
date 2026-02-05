@@ -1,88 +1,50 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, LayoutDashboard, History, Database } from 'lucide-react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { Home as HomeIcon } from 'lucide-react';
 import BottomNav from './BottomNav';
+import Sidebar from './Sidebar';
 import NotificationBadge from './NotificationBadge';
-import WhatsAppToggle from './WhatsAppToggle';
 import { Toaster } from 'sonner';
-import { API_URL } from '../utils/config';
 
 export default function Layout() {
-    const location = useLocation();
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="min-h-screen bg-slate-900 flex flex-col font-sans antialiased text-slate-100 selection:bg-emerald-500/30">
             <Toaster richColors position="top-center" theme="dark" />
 
-            {/* Desktop Header */}
-            <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-lg border-b border-slate-700/50 hidden md:block">
-                <div className="px-4 py-3 max-w-7xl mx-auto flex items-center justify-between">
-                    {/* Logo */}
-                    <div className="flex items-center gap-2">
+            {/* Desktop Sidebar */}
+            <Sidebar />
+
+            {/* Mobile Header (Unified but adapted for desktop) */}
+            <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-lg border-b border-slate-800 shrink-0 md:pl-64 transition-all duration-300">
+                <div className="px-5 py-4 flex items-center justify-between max-w-7xl mx-auto w-full">
+                    {/* Logo - Hidden on Desktop because Sidebar has it */}
+                    <div className="flex items-center gap-3 md:hidden">
                         <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20">
                             <HomeIcon className="w-5 h-5 text-white" aria-hidden="true" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-white leading-tight">Kitnets</h1>
-                            <p className="text-xs text-slate-400">Gerenciamento</p>
+                            <h1 className="text-base font-bold text-white leading-none">Kitnets</h1>
+                            <span className="text-[10px] text-slate-400 font-medium tracking-wide">Gerenciamento</span>
                         </div>
                     </div>
 
-                    {/* Navigation Links */}
-                    <nav className="flex items-center gap-1">
-                        <Link to="/" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
-                            Início
-                        </Link>
-                        <Link to="/dashboard" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/dashboard') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
-                            Dashboard
-                        </Link>
-                        <Link to="/leads" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/leads') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
-                            Leads
-                        </Link>
-                        <Link to="/history" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/history') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
-                            Histórico
-                        </Link>
-                        <Link to="/config" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/config') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
-                            Configurações
-                        </Link>
-                    </nav>
+                    {/* Desktop spacer to keep notifications aligned if needed, or just justify-end */}
+                    <div className="hidden md:block flex-1" />
 
-                    {/* Right Actions */}
-                    <div className="flex items-center gap-3">
-                        <NotificationBadge />
-                        <div className="h-6 w-px bg-slate-700/50"></div>
-                        <a
-                            href={`${API_URL}/backup`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50"
-                            title="Backup do Banco de Dados"
-                        >
-                            <Database className="w-4 h-4" />
-                            <span className="text-sm">Backup</span>
-                        </a>
-                    </div>
-                </div>
-            </header>
-
-            {/* Mobile Header (Minimal) */}
-            <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-lg border-b border-slate-700/50 md:hidden block">
-                <div className="px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/20">
-                            <HomeIcon className="w-4 h-4 text-white" aria-hidden="true" />
-                        </div>
-                        <span className="font-bold text-white">Kitnets</span>
-                    </div>
                     <NotificationBadge />
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="px-2 sm:px-4 py-4 max-w-7xl mx-auto">
-                <Outlet />
+            {/* Main Content Area - Pushed by Sidebar on Desktop */}
+            <main className="flex-1 w-full max-w-7xl mx-auto sm:px-4 md:pl-64 transition-all duration-300">
+                <div className="md:p-6">
+                    <Outlet />
+                </div>
             </main>
 
-            {/* Mobile Bottom Nav */}
+            {/* Bottom Navigation spacer - Mobile Only */}
+            <div className="h-24 md:hidden shrink-0" />
+
+            {/* Bottom Navigation - Mobile Only */}
             <BottomNav />
         </div>
     );

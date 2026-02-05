@@ -4,11 +4,9 @@ import { toast } from 'sonner';
 
 import KitnetCard from '../components/KitnetCard';
 import EditModal from '../components/EditModal';
-import TenantModal from '../components/TenantModal';
 import PaymentHistoryModal from '../components/PaymentHistoryModal';
 import PaymentConfirmDialog from '../components/PaymentConfirmDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
-import KitnetDetailsModal from '../components/KitnetDetailsModal';
 import KitnetSkeleton from '../components/KitnetSkeleton';
 import ExportButton from '../components/ExportButton';
 import WhatsAppButton from '../components/WhatsAppButton';
@@ -18,9 +16,7 @@ export default function Home() {
     const [kitnets, setKitnets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingKitnet, setEditingKitnet] = useState(null);
-    const [tenantKitnet, setTenantKitnet] = useState(null);
     const [historyKitnet, setHistoryKitnet] = useState(null);
-    const [selectedKitnet, setSelectedKitnet] = useState(null);
     const [confirmDialog, setConfirmDialog] = useState(null);
     const [paymentDialog, setPaymentDialog] = useState(null);
 
@@ -408,25 +404,13 @@ export default function Home() {
 
             {/* Grid */}
             {!loading && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-32 md:pb-10 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-32 md:pb-10 items-start">
                     {filteredKitnets.map(kitnet => (
                         <KitnetCard
                             key={kitnet.id}
                             kitnet={kitnet}
-                            onSelect={() => { triggerHaptic('light'); setSelectedKitnet(kitnet); }}
                             onToggle={() => handleToggleClick(kitnet)}
                             onTogglePayment={(e) => togglePayment(kitnet.id, e)}
-                            onEditTenant={(e) => {
-                                triggerHaptic('light');
-                                const rect = e?.currentTarget?.getBoundingClientRect();
-                                const triggerRect = rect ? {
-                                    top: rect.bottom + window.scrollY,
-                                    left: rect.left + window.scrollX,
-                                    width: rect.width,
-                                    height: rect.height
-                                } : null;
-                                setTenantKitnet({ ...kitnet, triggerRect });
-                            }}
                         />
                     ))}
                 </div>
@@ -453,29 +437,10 @@ export default function Home() {
                 />
             )}
 
-            {tenantKitnet && (
-                <TenantModal
-                    kitnet={tenantKitnet}
-                    onSave={updateTenant}
-                    onClose={() => setTenantKitnet(null)}
-                    triggerRect={tenantKitnet.triggerRect}
-                />
-            )}
-
             {historyKitnet && (
                 <PaymentHistoryModal
                     kitnet={historyKitnet}
                     onClose={() => setHistoryKitnet(null)}
-                />
-            )}
-
-// ... (keeping existing components)
-            {selectedKitnet && (
-                <KitnetDetailsModal
-                    kitnet={selectedKitnet}
-                    onClose={() => setSelectedKitnet(null)}
-                    onEdit={() => { setSelectedKitnet(null); setTenantKitnet(selectedKitnet); }}
-                    onTogglePayment={() => togglePayment(selectedKitnet.id)}
                 />
             )}
 
