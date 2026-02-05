@@ -1,11 +1,10 @@
 const pool = require('../config/database');
-const { initAuthCreds, BufferJSON, proto } = require('@whiskeysockets/baileys');
+// 2. Helper to read data (handling BufferJSON parsing)
+// ...
+const usePgAuthState = async (baileys) => {
+    const { initAuthCreds, BufferJSON, proto } = baileys;
 
-/**
- * Custom Auth Adapter for PostgreSQL
- * Stores authentication data in a 'whatsapp_auth' table.
- */
-const usePgAuthState = async () => {
+    // 1. Ensure table exists
     // 1. Ensure table exists
     await pool.query(`
         CREATE TABLE IF NOT EXISTS whatsapp_auth (

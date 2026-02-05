@@ -22,47 +22,20 @@ async function loadBaileys() {
     DisconnectReason = baileys.DisconnectReason;
     useMultiFileAuthState = baileys.useMultiFileAuthState;
     downloadMediaMessage = baileys.downloadMediaMessage;
+    return baileys;
 }
 
-/**
- * Transcreve áudio usando OpenAI Whisper
- */
-async function transcreverAudio(audioBuffer) {
-    if (!openai) {
-        console.warn('⚠️ OpenAI não configurado. Transcrição de áudio ignorada.');
-        return null;
-    }
-    try {
-        const tempPath = path.join(__dirname, '..', 'temp_audio.ogg');
-        fs.writeFileSync(tempPath, audioBuffer);
+// ...
 
-        const transcription = await openai.audio.transcriptions.create({
-            file: fs.createReadStream(tempPath),
-            model: 'whisper-1',
-            language: 'pt'
-        });
-
-        fs.unlinkSync(tempPath);
-        console.log(`🎤 Áudio transcrito: "${transcription.text}"`);
-        return transcription.text;
-    } catch (error) {
-        console.error('Erro ao transcrever áudio:', error.message);
-        return null;
-    }
-}
-
-/**
- * Inicializa conexão com WhatsApp via Baileys
- */
 async function initWhatsApp() {
-    await loadBaileys();
+    const baileys = await loadBaileys();
 
     const qrcode = require('qrcode-terminal');
     const usePgAuthState = require('./usePgAuthState');
     const pool = require('../config/database');
 
     // USAR AUTH VIA POSTGRES (PERSISTENTE)
-    const { state, saveCreds } = await usePgAuthState();
+    const { state, saveCreds } = await usePgAuthState(baileys);
 
     sock = makeWASocket({
         auth: state,
