@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Calendar, DollarSign, User, FileText, CheckCircle2, Home, CreditCard } from 'lucide-react';
+import { ArrowLeft, Printer, Calendar, DollarSign, User, FileText, CheckCircle2, Home, CreditCard, Share2, Loader2 } from 'lucide-react';
 import { api } from '../utils/api';
+import html2canvas from 'html2canvas';
 
 export default function PaymentReceipt() {
     const { id } = useParams();
@@ -9,6 +10,8 @@ export default function PaymentReceipt() {
     const [payment, setPayment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [sharing, setSharing] = useState(false);
+    const receiptRef = useRef(null);
 
     useEffect(() => {
         const fetchPaymentDetails = async () => {
@@ -31,6 +34,65 @@ export default function PaymentReceipt() {
         window.print();
     };
 
+    const handleShare = async () => {
+        if (!receiptRef.current) return;
+        setSharing(true);
+
+        try {
+            // Generate image from the receipt element
+            const canvas = await html2canvas(receiptRef.current, {
+                scale: 2, // Higher resolution
+                backgroundColor: '#ffffff',
+                logging: false,
+                useCORS: true
+            });
+
+            // Convert canvas to blob
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    alert('Erro ao gerar imagem para compartilhamento.');
+                    setSharing(false);
+                    return;
+                }
+
+                const file = new File([blob], `Recibo_Kitnet_${payment.kitnet_numero}_${payment.mes_referencia}.png`, { type: 'image/png' });
+
+                // Check if Web Share API is supported and can share files
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Recibo de Pagamento',
+                            text: `Recibo de pagamento da Kitnet ${payment.kitnet_numero} - Referência ${payment.mes_referencia}`
+                        });
+                    } catch (shareError) {
+                        if (shareError.name !== 'AbortError') {
+                            console.error('Erro ao compartilhar:', shareError);
+                        }
+                    }
+                } else {
+                    // Fallback: Download the image or simple WhatsApp text link
+                    // Prefer text link for fallback on desktop/unsupported browsers
+                    const text = `🧾 *RECIBO DE PAGAMENTO*\n\n` +
+                        `*Valor:* R$ ${Number(payment.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+                        `*Kitnet:* ${payment.kitnet_numero}\n` +
+                        `*Pagador:* ${payment.inquilino_nome || 'N/A'}\n` +
+                        `*Data:* ${new Date(payment.data_pagamento).toLocaleDateString('pt-BR')}\n\n` +
+                        `_Gerado por Agente Kitnets_`;
+
+                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                    window.open(whatsappUrl, '_blank');
+                }
+                setSharing(false);
+            }, 'image/png');
+
+        } catch (err) {
+            console.error('Erro ao gerar imagem:', err);
+            setSharing(false);
+            alert('Não foi possível gerar a imagem para compartilhamento.');
+        }
+    };
+
     const formatCurrency = (value) => {
         return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     };
@@ -39,23 +101,17 @@ export default function PaymentReceipt() {
         if (!dateString) return '-';
         const options = {
             day: '2-digit',
-            month: '2-digit', // Numeric month for screen
+            month: '2-digit',
             year: 'numeric',
             ...(includeTime && { hour: '2-digit', minute: '2-digit' })
         };
         return new Intl.DateTimeFormat('pt-BR', options).format(new Date(dateString));
     };
 
-    const formatShortDate = (dateString) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
-    }
-
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-900">
-                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
             </div>
         );
     }
@@ -77,7 +133,7 @@ export default function PaymentReceipt() {
     return (
         <div className="min-h-screen bg-slate-900 pb-20 md:pb-0">
             {/* ====================================================================================
-                SCREEN LAYOUT (Dark Mode - Restricted to Screen)
+                SCREEN LAYOUT (Dark Mode)
                ==================================================================================== */}
             <div className="print:hidden">
                 {/* Header */}
@@ -91,20 +147,20 @@ export default function PaymentReceipt() {
                     </button>
                 </div>
 
-                {/* Receipt Card */}
+                {/* Receipt Card Wrapper */}
                 <div className="max-w-2xl mx-auto p-4 md:p-0">
-                    <div className="bg-white text-slate-900 rounded-2xl shadow-xl overflow-hidden">
+                    <div ref={receiptRef} className="bg-white text-slate-900 rounded-2xl shadow-xl overflow-hidden relative">
                         {/* Top Accent */}
                         <div className="h-4 bg-emerald-500 w-full"></div>
 
                         <div className="p-8 md:p-12">
                             {/* Receipt Header */}
-                            <div className="flex justify-between items-start mb-12">
+                            <div className="flex justify-between items-start mb-8">
                                 <div>
-                                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Recibo de Pagamento</h1>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Recibo de Pagamento</h1>
                                     <p className="text-slate-500 text-sm">Comprovante gerado eletronicamente</p>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right hidden sm:block">
                                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium text-sm border border-emerald-200">
                                         <CheckCircle2 className="w-4 h-4" />
                                         Pago
@@ -113,10 +169,18 @@ export default function PaymentReceipt() {
                                 </div>
                             </div>
 
+                            {/* Mobile Badge (Visible only on small screens) */}
+                            <div className="sm:hidden mb-8 text-center">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium text-sm border border-emerald-200">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Pago
+                                </div>
+                            </div>
+
                             {/* Amount Section */}
-                            <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-100 mb-12">
+                            <div className="text-center py-6 md:py-8 bg-slate-50 rounded-xl border border-slate-100 mb-8 md:mb-12">
                                 <p className="text-slate-500 uppercase tracking-widest text-xs font-semibold mb-1">Valor Recebido</p>
-                                <div className="text-5xl font-bold text-slate-900 tracking-tight">
+                                <div className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
                                     {formatCurrency(payment.valor)}
                                 </div>
                                 {payment.forma_pagamento && (
@@ -129,7 +193,7 @@ export default function PaymentReceipt() {
                             </div>
 
                             {/* Details Grid */}
-                            <div className="grid grid-cols-2 gap-y-8 gap-x-4 mb-12">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 md:gap-y-8 gap-x-4 mb-8 md:mb-12">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1 text-slate-500">
                                         <User className="w-4 h-4" />
@@ -158,22 +222,33 @@ export default function PaymentReceipt() {
                             </div>
 
                             {/* Footer */}
-                            <div className="border-t border-slate-100 pt-8 text-center">
+                            <div className="border-t border-slate-100 pt-6 md:pt-8 text-center text-slate-400 text-xs">
                                 <p className="font-bold text-slate-900 mb-1">Agente Kitnets</p>
-                                <p className="text-slate-500 text-sm">Sistema de Gestão de Aluguéis</p>
+                                <p>Sistema de Gestão de Aluguéis</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-8 flex justify-center">
+                    <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                         <button
-                            onClick={handlePrint}
-                            className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-emerald-500/20 transition-all transform hover:-translate-y-1"
+                            onClick={handleShare}
+                            disabled={sharing}
+                            className="flex items-center justify-center gap-3 px-6 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            <Printer className="w-5 h-5" />
-                            Imprimir Comprovante
+                            {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
+                            {sharing ? 'Gerando...' : 'Compartilhar no WhatsApp'}
                         </button>
+
+                        <div className="hidden sm:block">
+                            <button
+                                onClick={handlePrint}
+                                className="flex items-center justify-center gap-3 px-6 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95"
+                            >
+                                <Printer className="w-5 h-5" />
+                                Imprimir
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,75 +257,51 @@ export default function PaymentReceipt() {
                 PRINT LAYOUT (Updated for Mobile & Desktop - Hidden on screen)
                ==================================================================================== */}
             <div className="hidden print:block" id="print-area">
-                <div className="p-8 max-w-[100%] mx-auto bg-white">
-                    {/* Header Icon */}
-                    <div className="flex flex-col items-center mb-8 pt-4">
-                        <h2 className="text-2xl font-bold text-center text-black mb-1">
-                            Pagamento realizado
-                        </h2>
-                        <p className="text-gray-500 text-sm">
-                            {formatShortDate(payment.data_pagamento, true)}
-                        </p>
+                <div className="p-8 max-w-[100%] mx-auto bg-white text-black">
+                    {/* Simplified Print Layout for Browser Printing */}
+                    <div className="flex flex-col items-center mb-8 border-b pb-8">
+                        <h1 className="text-2xl font-bold mb-2">RECIBO DE PAGAMENTO</h1>
+                        <p className="text-sm text-gray-500">Agente Kitnets - Sistema de Gestão</p>
                     </div>
 
-                    {/* Amount */}
-                    <div className="text-center mb-10">
-                        <span className="text-gray-500 text-xl font-medium align-top mr-1">R$</span>
-                        <span className="text-5xl font-bold text-black tracking-tight leading-none">
-                            {formatCurrency(payment.valor).replace(/^R\$\s?/, '').trim()}
-                        </span>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-gray-200 mb-8 w-full" />
-
-                    {/* Details List - Stacked for better mobile print */}
-                    <div className="space-y-6">
-                        {/* Destino */}
-                        <div className="flex flex-col">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Destino</p>
-                            <p className="text-lg font-semibold text-black">Kitnet {payment.kitnet_numero}</p>
-                            <p className="text-sm text-gray-500">Mês Ref: {payment.mes_referencia}</p>
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase">Pagador</p>
+                            <p className="text-lg font-bold">{payment.inquilino_nome || 'N/A'}</p>
+                            {payment.inquilino_cpf && <p className="text-sm">{payment.inquilino_cpf}</p>}
                         </div>
-
-                        {/* Origem */}
-                        <div className="flex flex-col">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Origem</p>
-                            <p className="text-lg font-semibold text-black">
-                                {payment.inquilino_nome || 'Inquilino não identificado'}
-                            </p>
-                            {payment.inquilino_cpf && (
-                                <p className="text-sm text-gray-500">CPF: {payment.inquilino_cpf}</p>
-                            )}
-                        </div>
-
-                        {/* Forma de Pagamento */}
-                        <div className="flex flex-col">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pagamento via</p>
-                            <p className="text-lg font-medium text-black capitalize">
-                                {payment.forma_pagamento || 'Dinheiro'}
-                            </p>
-                        </div>
-
-                        {/* Data Completa */}
-                        <div className="flex flex-col">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Data e Hora</p>
-                            <p className="text-lg font-medium text-black">
-                                {formatDate(payment.data_pagamento, true)}
-                            </p>
+                        <div className="text-right">
+                            <p className="text-xs font-bold text-gray-500 uppercase">Valor</p>
+                            <p className="text-3xl font-bold">{formatCurrency(payment.valor)}</p>
                         </div>
                     </div>
 
-                    {/* Footer Info */}
-                    <div className="mt-16 pt-8 border-t border-gray-200">
-                        <div className="flex justify-between items-center text-xs text-gray-400">
-                            <span>ID da transação</span>
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded">{payment.id}</span>
-                        </div>
-                        <div className="text-center mt-6">
-                            <p className="text-sm font-bold text-gray-300">Agente Kitnets</p>
-                            <p className="text-[10px] text-gray-300">Comprovante gerado automaticamente</p>
-                        </div>
+                    <div className="mb-8">
+                        <p className="text-xs font-bold text-gray-500 uppercase mb-2">Detalhes</p>
+                        <table className="w-full text-sm">
+                            <tbody>
+                                <tr className="border-b">
+                                    <td className="py-2 text-gray-600">Referência</td>
+                                    <td className="py-2 text-right font-medium">Kitnet {payment.kitnet_numero} - {payment.mes_referencia}</td>
+                                </tr>
+                                <tr className="border-b">
+                                    <td className="py-2 text-gray-600">Data de Pagamento</td>
+                                    <td className="py-2 text-right font-medium">{formatDate(payment.data_pagamento, true)}</td>
+                                </tr>
+                                <tr className="border-b">
+                                    <td className="py-2 text-gray-600">Forma de Pagamento</td>
+                                    <td className="py-2 text-right font-medium capitalize">{payment.forma_pagamento || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2 text-gray-600">ID da Transação</td>
+                                    <td className="py-2 text-right font-mono text-xs">{payment.id}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="text-center pt-8 text-xs text-gray-400">
+                        <p>Este recibo serve como comprovante de pagamento para todos os fins legais.</p>
                     </div>
                 </div>
             </div>
@@ -258,26 +309,29 @@ export default function PaymentReceipt() {
             {/* Print Styles Global Override */}
             <style>{`
                 @media print {
-                    @page { margin: 0; size: auto; }
+                    @page { margin: 1cm; size: auto; }
                     body { 
                         background-color: white !important; 
                         color: black !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
                     }
                     /* Hide everything that is NOT the print block */
                     body > *:not(#root) { display: none !important; }
                     #root > *:not(.min-h-screen) { display: none !important; }
-                    /* Fix the print container */
+                    
+                    /* Reset main container */
+                    .min-h-screen { 
+                        min-height: auto !important; 
+                        background: white !important;
+                        padding: 0 !important;
+                    }
+
+                    /* Hide screen elements */
+                    .print\\:hidden { display: none !important; }
+
+                    /* Show print elements */
                     .print\\:block { 
                         display: block !important; 
-                        position: relative !important;
-                        width: 100% !important;
-                        height: auto !important;
-                        padding: 20px !important;
-                        background: white !important;
                     }
-                    .print\\:hidden { display: none !important; }
                 }
             `}</style>
         </div>
