@@ -229,6 +229,9 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario) {
 3. Se o nome for 'Desconhecido', pergunte o nome. Se ele responder, CHAME \`register_lead\` com o nome.
 4. Não invente kitnets. Se não tem livres, diga que não tem.
 5. Seja curto, amigável e use emojis 🏠.
+6. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização neste formato:
+   - *Localização:* R. Porto Reis, 125 - Praia de Fora, Palhoça
+   - *Google Maps:* https://maps.app.goo.gl/wYwVUsGdTAFPSoS79
 `;
 
         // Chamar OpenAI

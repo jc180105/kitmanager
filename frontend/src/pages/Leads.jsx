@@ -131,8 +131,16 @@ export default function Leads() {
         }
 
         // If still too long, it's likely a WhatsApp LID or internal ID. 
-        // Return raw to avoid misleading formatting (e.g. (18) ... for a LID)
         if (p.length > 11) return phone;
+
+        // Auto-fix missing 9 for mobile numbers (Legacy WhatsApp IDs often miss the 9)
+        // If 10 digits (DDD + 8) and starts with 7, 8, or 9, it's likely a mobile
+        if (p.length === 10) {
+            const thirdDigit = parseInt(p.substring(2, 3));
+            if (thirdDigit >= 7) {
+                p = p.substring(0, 2) + '9' + p.substring(2);
+            }
+        }
 
         // Format Mobile: (XX) XXXXX-XXXX
         if (p.length === 11) {
@@ -150,19 +158,11 @@ export default function Leads() {
     const openWhatsApp = (phone) => {
         let p = phone.replace(/\D/g, '');
 
-        // Reuse truncation logic for cleaner link
-        if (p.startsWith('55') && p.length > 13) p = p.substring(2);
+        // Remove 55 if likely country code to normalize
+        if (p.startsWith('55') && p.length > 11) p = p.substring(2);
 
-        // If it's a LID (very long), we can't easily open a WA link.
-        // But we try anyway with what we have, or maybe 55+LID won't work.
-        // Best effort:
-        if (p.length > 13) {
-            // It's a LID. WA links don't work well with LIDs usually.
-            // Just return cleaned number.
-            return window.open(`https://wa.me/${p}`, '_blank');
-        }
-
-        if (p.length > 11) {
+        // Heuristic truncation
+        if (p.length > 11 && p.length <= 13) {
             const ddd = parseInt(p.substring(0, 2));
             if (ddd >= 11 && ddd <= 99) {
                 const third = parseInt(p.substring(2, 3));
@@ -171,7 +171,15 @@ export default function Leads() {
             }
         }
 
-        // Ensure country code 55
+        // Auto-fix missing 9 for mobile numbers
+        if (p.length === 10) {
+            const thirdDigit = parseInt(p.substring(2, 3));
+            if (thirdDigit >= 7) {
+                p = p.substring(0, 2) + '9' + p.substring(2);
+            }
+        }
+
+        // Ensure country code 55 for link
         if (!p.startsWith('55')) {
             p = '55' + p;
         }

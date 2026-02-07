@@ -118,7 +118,7 @@ async function initWhatsApp() {
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe || msg.key.remoteJid === 'status@broadcast') return;
 
-        const remetente = msg.key.remoteJid;
+        const remetente = msg.key.participant || msg.key.remoteJid;
         const telefone = remetente.replace('@s.whatsapp.net', '').replace('@lid', '');
         let textoMensagem = '';
 
