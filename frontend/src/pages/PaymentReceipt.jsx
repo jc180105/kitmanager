@@ -179,14 +179,13 @@ export default function PaymentReceipt() {
             </div>
 
             {/* ====================================================================================
-                PRINT LAYOUT (Nubank Style - Hidden on screen)
+                PRINT LAYOUT (Updated for Mobile & Desktop - Hidden on screen)
                ==================================================================================== */}
-            <div className="hidden print:block print:fixed print:inset-0 print:bg-white print:z-[9999] print:p-8">
-                <div className="max-w-md mx-auto">
+            <div className="hidden print:block" id="print-area">
+                <div className="p-8 max-w-[100%] mx-auto bg-white">
                     {/* Header Icon */}
                     <div className="flex flex-col items-center mb-8 pt-4">
-                        {/* We use inline SVG for print reliability or text */}
-                        <h2 className="text-xl font-semibold text-center text-black mb-1">
+                        <h2 className="text-2xl font-bold text-center text-black mb-1">
                             Pagamento realizado
                         </h2>
                         <p className="text-gray-500 text-sm">
@@ -196,60 +195,61 @@ export default function PaymentReceipt() {
 
                     {/* Amount */}
                     <div className="text-center mb-10">
-                        <span className="text-gray-500 text-lg font-medium align-top mr-1">R$</span>
-                        <span className="text-4xl font-bold text-black tracking-tight">
+                        <span className="text-gray-500 text-xl font-medium align-top mr-1">R$</span>
+                        <span className="text-5xl font-bold text-black tracking-tight leading-none">
                             {formatCurrency(payment.valor).replace(/^R\$\s?/, '').trim()}
                         </span>
                     </div>
 
                     {/* Divider */}
-                    <div className="h-px bg-gray-200 mb-6" />
+                    <div className="h-px bg-gray-200 mb-8 w-full" />
 
-                    {/* Details List */}
+                    {/* Details List - Stacked for better mobile print */}
                     <div className="space-y-6">
                         {/* Destino */}
-                        <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Destino</p>
-                            <div className="flex items-center gap-3">
-                                <div>
-                                    <p className="font-semibold text-black">Kitnet {payment.kitnet_numero}</p>
-                                    <p className="text-sm text-gray-500">Mês Ref: {payment.mes_referencia}</p>
-                                </div>
-                            </div>
+                        <div className="flex flex-col">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Destino</p>
+                            <p className="text-lg font-semibold text-black">Kitnet {payment.kitnet_numero}</p>
+                            <p className="text-sm text-gray-500">Mês Ref: {payment.mes_referencia}</p>
                         </div>
 
                         {/* Origem */}
-                        <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Origem</p>
-                            <div className="flex items-center gap-3">
-                                <div>
-                                    <p className="font-semibold text-black">
-                                        {payment.inquilino_nome || 'Inquilino não identificado'}
-                                    </p>
-                                    {payment.inquilino_cpf && (
-                                        <p className="text-sm text-gray-500">CPF: {payment.inquilino_cpf}</p>
-                                    )}
-                                </div>
-                            </div>
+                        <div className="flex flex-col">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Origem</p>
+                            <p className="text-lg font-semibold text-black">
+                                {payment.inquilino_nome || 'Inquilino não identificado'}
+                            </p>
+                            {payment.inquilino_cpf && (
+                                <p className="text-sm text-gray-500">CPF: {payment.inquilino_cpf}</p>
+                            )}
                         </div>
 
                         {/* Forma de Pagamento */}
-                        <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pagamento via</p>
-                            <p className="font-medium text-black capitalize">
+                        <div className="flex flex-col">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pagamento via</p>
+                            <p className="text-lg font-medium text-black capitalize">
                                 {payment.forma_pagamento || 'Dinheiro'}
+                            </p>
+                        </div>
+
+                        {/* Data Completa */}
+                        <div className="flex flex-col">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Data e Hora</p>
+                            <p className="text-lg font-medium text-black">
+                                {formatDate(payment.data_pagamento, true)}
                             </p>
                         </div>
                     </div>
 
                     {/* Footer Info */}
-                    <div className="mt-12 pt-6 border-t border-gray-200">
+                    <div className="mt-16 pt-8 border-t border-gray-200">
                         <div className="flex justify-between items-center text-xs text-gray-400">
-                            <span>ID da transação:</span>
-                            <span className="font-mono">{payment.id}</span>
+                            <span>ID da transação</span>
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded">{payment.id}</span>
                         </div>
-                        <div className="text-center mt-4 text-xs text-gray-300">
-                            Agente Kitnets
+                        <div className="text-center mt-6">
+                            <p className="text-sm font-bold text-gray-300">Agente Kitnets</p>
+                            <p className="text-[10px] text-gray-300">Comprovante gerado automaticamente</p>
                         </div>
                     </div>
                 </div>
@@ -259,9 +259,24 @@ export default function PaymentReceipt() {
             <style>{`
                 @media print {
                     @page { margin: 0; size: auto; }
-                    body { background: white !important; }
-                    /* Ensure print container visible and properly sized */
-                    .print\\:block { display: block !important; }
+                    body { 
+                        background-color: white !important; 
+                        color: black !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    /* Hide everything that is NOT the print block */
+                    body > *:not(#root) { display: none !important; }
+                    #root > *:not(.min-h-screen) { display: none !important; }
+                    /* Fix the print container */
+                    .print\\:block { 
+                        display: block !important; 
+                        position: relative !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        padding: 20px !important;
+                        background: white !important;
+                    }
                     .print\\:hidden { display: none !important; }
                 }
             `}</style>
