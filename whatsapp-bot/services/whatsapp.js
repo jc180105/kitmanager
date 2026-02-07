@@ -156,7 +156,8 @@ async function initWhatsApp() {
         if (!msg.message || msg.key.fromMe || msg.key.remoteJid === 'status@broadcast') return;
 
         const remetente = msg.key.participant || msg.key.remoteJid;
-        const telefone = remetente.replace('@s.whatsapp.net', '').replace('@lid', '');
+        // FIX: More robust cleaning of JID to prevent database truncation errors
+        const telefone = remetente.replace(/\@.*$/, '');
 
         // Rate Limiting (3 segundos entre mensagens)
         const now = Date.now();

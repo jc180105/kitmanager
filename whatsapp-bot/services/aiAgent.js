@@ -175,7 +175,23 @@ async function saveMessage(telefone, role, content) {
             [telefone, role, content]
         );
     } catch (error) {
-        console.error('Erro ao salvar mensagem:', error);
+        console.error('Erro ao salvar mensagem (tentativa 1):', error);
+
+        // Auto-fix: Se o erro for de tamanho de coluna (22001), tenta aumentar a coluna
+        if (error.code === '22001') {
+            try {
+                console.log('🔧 Tentando aumentar tamanho da coluna telefone...');
+                await pool.query('ALTER TABLE whatsapp_messages ALTER COLUMN telefone TYPE VARCHAR(60)');
+                // Tenta salvar de novo
+                await pool.query(
+                    'INSERT INTO whatsapp_messages (telefone, role, content) VALUES ($1, $2, $3)',
+                    [telefone, role, content]
+                );
+                console.log('✅ Mensagem salva após migração de schema!');
+            } catch (err2) {
+                console.error('Erro crítico ao salvar mensagem:', err2);
+            }
+        }
     }
 }
 
@@ -316,14 +332,15 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
 
 🤖 SUAS INSTRUÇÕES:
 1. Seu objetivo é tirar dúvidas e **REGISTRAR O INTERESSE** do cliente.
-2. Use a ferramenta \`register_lead\` SEMPRE que o cliente demonstrar interesse ou disser o nome.
-3. Se o nome for 'Desconhecido', pergunte o nome. Se ele responder, CHAME \`register_lead\` com o nome.
-4. Não invente kitnets. Se não tem livres, diga que não tem.
-5. Seja curto, amigável e use emojis 🏠.
-6. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização neste formato:
+2. **PRIORIDADE MÁXIMA:** Se o cliente pedir "folder", "pdf", "arquivo", "informações por escrito" ou "regras", USE A FERRAMENTA \`send_info_folder\` IMEDIATAMENTE. Não faça perguntas antes. Envie o folder e DEPOIS pergunte o nome ou continue a conversa.
+3. Use a ferramenta \`register_lead\` quando o cliente disser o nome ou demonstrar interesse em visitar.
+4. Se o nome for 'Desconhecido' e ele NÃO pediu folder/video, pergunte o nome.
+5. Não invente kitnets. Se não tem livres, diga que não tem.
+6. Seja curto, amigável e use emojis 🏠.
+7. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização neste formato:
    - *Localização:* R. Porto Reis, 125 - Praia de Fora, Palhoça
    - *Google Maps:* https://maps.app.goo.gl/wYwVUsGdTAFPSoS79
-7. **AGENDAMENTO:** Se o cliente quiser visitar, pergunte data e hora. Use 'schedule_visit' com formato 'YYYY-MM-DD HH:mm'. Se ele disser "amanhã as 14h", converta você mesmo para a data correta.
+8. **AGENDAMENTO:** Se o cliente quiser visitar, pergunte data e hora. Use 'schedule_visit'.
 
 📋 REGRAS E DETALHES (CÉREBRO):
 - **Animais:** NÃO aceitamos pets/animais de estimação. 🚫🐶
