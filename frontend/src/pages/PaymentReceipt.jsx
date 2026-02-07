@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Calendar, DollarSign, User, FileText, CheckCircle2, Home } from 'lucide-react';
+import { ArrowLeft, Printer, Share2, Download, Home, User, Calendar, CreditCard } from 'lucide-react';
 import { API_URL } from '../utils/config';
 
 export default function PaymentReceipt() {
@@ -33,35 +33,37 @@ export default function PaymentReceipt() {
     };
 
     const formatCurrency = (value) => {
-        return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     };
 
     const formatDate = (dateString, includeTime = false) => {
         if (!dateString) return '-';
         const options = {
             day: '2-digit',
-            month: '2-digit',
+            month: 'short',
             year: 'numeric',
             ...(includeTime && { hour: '2-digit', minute: '2-digit' })
         };
-        return new Intl.DateTimeFormat('pt-BR', options).format(new Date(dateString));
+        const date = new Date(dateString);
+        // Format like "7 fev 2026"
+        return date.toLocaleDateString('pt-BR', options).replace('.', '');
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
-                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
+                <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 p-4">
-                <div className="text-red-400 mb-4">{error}</div>
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#f5f5f5] p-4">
+                <div className="text-red-500 mb-4 font-medium">{error}</div>
                 <button
                     onClick={() => navigate(-1)}
-                    className="text-slate-400 hover:text-white flex items-center gap-2"
+                    className="text-gray-600 hover:text-black flex items-center gap-2"
                 >
                     <ArrowLeft className="w-4 h-4" /> Voltar
                 </button>
@@ -70,105 +72,110 @@ export default function PaymentReceipt() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 pb-20 md:pb-0">
+        <div className="min-h-screen bg-[#f5f5f5] pb-20 md:pb-0 flex flex-col items-center print:bg-white pt-8 print:pt-0">
             {/* Header - Hidden on Print */}
-            <div className="p-4 md:p-6 print:hidden">
+            <div className="w-full max-w-md px-4 mb-6 print:hidden flex items-center justify-between">
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6"
+                    className="p-2 -ml-2 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
                 >
-                    <ArrowLeft className="w-5 h-5" />
-                    <span>Voltar</span>
+                    <ArrowLeft className="w-6 h-6" />
                 </button>
+                <h1 className="text-lg font-semibold text-gray-800">Comprovante</h1>
+                <div className="w-8" /> {/* Spacer */}
             </div>
 
-            {/* Receipt Content */}
-            <div className="max-w-2xl mx-auto p-4 md:p-0">
-                <div id="receipt" className="bg-white text-slate-900 rounded-2xl shadow-xl overflow-hidden print:shadow-none print:rounded-none">
-                    {/* Top Accent */}
-                    <div className="h-4 bg-emerald-500 w-full print:bg-emerald-500"></div>
+            {/* Receipt Card */}
+            <div id="receipt" className="w-full max-w-md bg-white print:shadow-none print:w-full">
 
-                    <div className="p-8 md:p-12">
-                        {/* Receipt Header */}
-                        <div className="flex justify-between items-start mb-12">
-                            <div>
-                                <h1 className="text-3xl font-bold text-slate-900 mb-2">Recibo de Pagamento</h1>
-                                <p className="text-slate-500 text-sm">Comprovante gerado eletronicamente</p>
-                            </div>
-                            <div className="text-right">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium text-sm border border-emerald-200 print:border-emerald-500">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Pago
+                {/* Content */}
+                <div className="p-6 md:p-8">
+                    {/* Header Icon */}
+                    <div className="flex flex-col items-center mb-8 pt-4">
+                        <div className="w-12 h-12 bg-[#f5f5f5] rounded-full flex items-center justify-center mb-4 print:hidden">
+                            <CreditCard className="w-6 h-6 text-black" />
+                        </div>
+                        <h2 className="text-xl font-semibold text-center text-black mb-1">
+                            Pagamento realizado
+                        </h2>
+                        <p className="text-gray-500 text-sm">
+                            {formatDate(payment.data_pagamento, true)}
+                        </p>
+                    </div>
+
+                    {/* Amount */}
+                    <div className="text-center mb-10">
+                        <span className="text-gray-500 text-lg font-medium align-top mr-1">R$</span>
+                        <span className="text-4xl font-bold text-black tracking-tight">
+                            {formatCurrency(payment.valor)}
+                        </span>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px bg-gray-100 mb-6" />
+
+                    {/* Details List */}
+                    <div className="space-y-6">
+                        {/* Destino / Kitnet */}
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Destino</p>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <Home className="w-5 h-5 text-gray-600" />
                                 </div>
-                                <p className="text-slate-400 text-xs mt-2">#{payment.id}</p>
+                                <div>
+                                    <p className="font-semibold text-black">Kitnet {payment.kitnet_numero}</p>
+                                    <p className="text-sm text-gray-500">Mês Ref: {payment.mes_referencia}</p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Amount Section */}
-                        <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-100 mb-12 print:bg-transparent print:border-slate-300">
-                            <p className="text-slate-500 uppercase tracking-widest text-xs font-semibold mb-1">Valor Recebido</p>
-                            <div className="text-5xl font-bold text-slate-900 tracking-tight">
-                                {formatCurrency(payment.valor)}
-                            </div>
-                            {payment.forma_pagamento && (
-                                <div className="flex items-center justify-center gap-2 mt-3 text-slate-600">
-                                    <span className="text-sm px-2 py-0.5 bg-white border border-slate-200 rounded text-slate-500">
-                                        via {payment.forma_pagamento}
-                                    </span>
+                        {/* Origem / Pagador */}
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Origem</p>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <User className="w-5 h-5 text-gray-600" />
                                 </div>
-                            )}
-                        </div>
-
-                        {/* Details Grid */}
-                        <div className="grid grid-cols-2 gap-y-8 gap-x-4 mb-12">
-                            <div>
-                                <div className="flex items-center gap-2 mb-1 text-slate-500">
-                                    <User className="w-4 h-4" />
-                                    <span className="text-xs uppercase tracking-wider font-semibold">Pagador</span>
+                                <div>
+                                    <p className="font-semibold text-black">
+                                        {payment.inquilino_nome || 'Inquilino não identificado'}
+                                    </p>
+                                    {payment.inquilino_cpf && (
+                                        <p className="text-sm text-gray-500">CPF ***.{payment.inquilino_cpf.slice(3, 6)}.{payment.inquilino_cpf.slice(6, 9)}-**</p>
+                                    )}
                                 </div>
-                                <p className="font-medium text-lg text-slate-900">{payment.inquilino_nome || 'Inquilino não identificado'}</p>
-                                {payment.inquilino_cpf && <p className="text-sm text-slate-500">CPF: {payment.inquilino_cpf}</p>}
-                            </div>
-
-                            <div>
-                                <div className="flex items-center gap-2 mb-1 text-slate-500">
-                                    <Home className="w-4 h-4" /> {/* Improvised Home icon since it's not imported but User is. Reusing logic or assumption? Ah, wait, I didn't import Home. Let's stick strictly to imported icons or add it. I imported Home in History.jsx but not here. Let me add Home to imports or use FileText. */}
-                                    <span className="text-xs uppercase tracking-wider font-semibold">Referência</span>
-                                </div>
-                                <p className="font-medium text-lg text-slate-900">Kitnet {payment.kitnet_numero}</p>
-                                <p className="text-sm text-slate-500">Mês: {payment.mes_referencia}</p>
-                            </div>
-
-                            <div>
-                                <div className="flex items-center gap-2 mb-1 text-slate-500">
-                                    <Calendar className="w-4 h-4" />
-                                    <span className="text-xs uppercase tracking-wider font-semibold">Data do Pagamento</span>
-                                </div>
-                                <p className="font-medium text-lg text-slate-900">{formatDate(payment.data_pagamento, true)}</p>
                             </div>
                         </div>
 
-                        {/* Footer */}
-                        <div className="border-t border-slate-100 pt-8 text-center print:mt-16 print:border-slate-300">
-                            <p className="font-bold text-slate-900 mb-1">Agente Kitnets</p>
-                            <p className="text-slate-500 text-sm">Sistema de Gestão de Aluguéis</p>
-                            <p className="text-xs text-slate-400 mt-4 print:hidden">
-                                ID da Transação: {payment.id} • Emitido em: {new Date().toLocaleString('pt-BR')}
+                        {/* Forma de Pagamento */}
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pagamento via</p>
+                            <p className="font-medium text-black capitalize">
+                                {payment.forma_pagamento || 'Dinheiro'}
                             </p>
                         </div>
                     </div>
-                </div>
 
-                {/* Actions - Hidden on Print */}
-                <div className="mt-8 flex justify-center print:hidden">
-                    <button
-                        onClick={handlePrint}
-                        className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-emerald-500/20 transition-all transform hover:-translate-y-1"
-                    >
-                        <Printer className="w-5 h-5" />
-                        Imprimir Comprovante
-                    </button>
+                    {/* Footer Info */}
+                    <div className="mt-12 pt-6 border-t border-gray-100">
+                        <div className="flex justify-between items-center text-xs text-gray-400">
+                            <span>ID da transação:</span>
+                            <span className="font-mono">{payment.id}</span>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            {/* Floating Print Button - Mobile Style */}
+            <div className="fixed bottom-6 left-0 right-0 px-4 print:hidden flex justify-center">
+                <button
+                    onClick={handlePrint}
+                    className="bg-black text-white px-6 py-3 rounded-full font-medium shadow-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+                >
+                    <Printer className="w-4 h-4" />
+                    Imprimir Comprovante
+                </button>
             </div>
 
             {/* Print Styles */}
@@ -194,17 +201,17 @@ export default function PaymentReceipt() {
                         padding: 40px;
                         z-index: 9999;
                         background: white;
-                        border: none;
-                        box-shadow: none;
                     }
-                    .print\\:hidden {
-                        display: none !important;
+                    /* Hide rounded corners and shadows for print */
+                    .rounded-2xl, .rounded-xl, .rounded-full {
+                        border-radius: 0 !important;
                     }
-                    .print\\:bg-transparent {
-                        background: transparent !important;
+                    .shadow-xl, .shadow-lg {
+                        box-shadow: none !important;
                     }
-                    .print\\:border-slate-300 {
-                        border-color: #cbd5e1 !important;
+                    .bg-gray-100 {
+                        background-color: transparent !important;
+                        border: 1px solid #eee !important;
                     }
                 }
             `}</style>
