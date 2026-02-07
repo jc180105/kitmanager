@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { History as HistoryIcon, ArrowRight, Loader2, ArrowLeft, Calendar, ChevronDown, ChevronUp, User, DollarSign, Home } from 'lucide-react';
+import { History as HistoryIcon, ArrowRight, Loader2, ArrowLeft, Calendar, ChevronDown, ChevronUp, User, DollarSign, Home, ChevronRight } from 'lucide-react';
 import { API_URL } from '../utils/config';
 import { useNavigate } from 'react-router-dom';
 
@@ -236,7 +236,9 @@ export default function HistoryPage() {
                                                         </span>
                                                     </div>
                                                 )}
-                                                {isExpanded ? (
+                                                {item.tipo === 'pagamento' ? (
+                                                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                                                ) : isExpanded ? (
                                                     <ChevronUp className="w-5 h-5 text-slate-400" />
                                                 ) : (
                                                     <ChevronDown className="w-5 h-5 text-slate-400" />
