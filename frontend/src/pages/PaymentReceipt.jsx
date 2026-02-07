@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Calendar, DollarSign, User, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Printer, Calendar, DollarSign, User, FileText, CheckCircle2, Home } from 'lucide-react';
 import { API_URL } from '../utils/config';
 
 export default function PaymentReceipt() {
