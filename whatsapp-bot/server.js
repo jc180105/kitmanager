@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { initWhatsApp, isConnected, getQR } = require('./services/whatsapp');
 const { initCron } = require('./services/cronService');
+const { runMigrations } = require('./services/migration');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -32,9 +33,10 @@ app.listen(PORT, async () => {
     console.log(`🚀 WhatsApp Bot rodando na porta ${PORT}`);
     console.log(`📡 Health check: http://localhost:${PORT}/health`);
     console.log(`📱 QR Code: http://localhost:${PORT}/qr`);
-    console.log('\\n🔄 Inicializando WhatsApp...');
+    console.log('\n🔄 Inicializando WhatsApp...');
 
     try {
+        await runMigrations();
         await initWhatsApp();
         initCron();
     } catch (error) {
@@ -45,11 +47,11 @@ app.listen(PORT, async () => {
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-    console.log('\\n👋 Encerrando bot...');
+    console.log('\n👋 Encerrando bot...');
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    console.log('\\n👋 Encerrando bot...');
+    console.log('\n👋 Encerrando bot...');
     process.exit(0);
 });

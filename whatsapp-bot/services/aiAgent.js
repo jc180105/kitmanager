@@ -158,10 +158,11 @@ async function getHistory(telefone) {
  */
 async function saveMessage(telefone, role, content) {
     try {
+        // Garantir que a tabela existe com tamanho correto
         await pool.query(`
             CREATE TABLE IF NOT EXISTS whatsapp_messages (
                 id SERIAL PRIMARY KEY,
-                telefone VARCHAR(20),
+                telefone VARCHAR(60),
                 role VARCHAR(20),
                 content TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -237,12 +238,12 @@ async function registrarLead(nome, telefone, kitnetInteresse = null) {
     try {
         console.log(`📝 Registrando Lead: ${nome || 'Nome não inf.'} - ${telefone}`);
 
-        // Primeiro cria a tabela se não existir
+        // Primeiro cria a tabela se não existir (garantindo VARCHAR(60))
         await pool.query(`
             CREATE TABLE IF NOT EXISTS leads (
                 id SERIAL PRIMARY KEY,
                 nome VARCHAR(100),
-                telefone VARCHAR(20) UNIQUE,
+                telefone VARCHAR(60) UNIQUE,
                 kitnet_interesse INTEGER,
                 data_contato TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 status VARCHAR(20) DEFAULT 'novo'
