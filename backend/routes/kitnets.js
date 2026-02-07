@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { validateId, validateValor, validateStatus } = require('../utils/validators');
+const { validateId, validateValor, validateStatus, validatePaymentMethod } = require('../utils/validators');
 
 // GET /kitnets - Lista todas as kitnets
 router.get('/', async (req, res) => {
@@ -224,6 +224,10 @@ router.put('/:id/pagamento', async (req, res) => {
 
     if (!validateId(id)) {
         return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    if (forma_pagamento && !validatePaymentMethod(forma_pagamento)) {
+        return res.status(400).json({ error: 'Forma de pagamento inválida. Opções: Dinheiro, Pix - Nubank, Pix - Bradesco, Pix - Inter, Pix - Caixa' });
     }
 
     try {

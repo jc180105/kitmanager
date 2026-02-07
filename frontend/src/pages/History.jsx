@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { History as HistoryIcon, ArrowRight, Loader2, ArrowLeft, Calendar, ChevronDown, ChevronUp, User, DollarSign, Home, ChevronRight } from 'lucide-react';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 
 export default function HistoryPage() {
@@ -16,7 +16,7 @@ export default function HistoryPage() {
         const fetchHistory = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${API_URL}/historico?limit=100`);
+                const response = await api.get('/historico?limit=100');
                 if (!response.ok) throw new Error('Erro ao buscar histórico');
                 const data = await response.json();
                 setHistory(data);

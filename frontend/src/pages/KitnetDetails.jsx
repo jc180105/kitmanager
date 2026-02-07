@@ -5,7 +5,7 @@ import {
     FileText, MessageCircle, Edit, Loader2, DollarSign, CheckCircle, Pencil, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 import { generateContract } from '../utils/generateContract';
 
 export default function KitnetDetails() {
@@ -24,7 +24,7 @@ export default function KitnetDetails() {
 
     const fetchKitnet = async () => {
         try {
-            const response = await fetch(`${API_URL}/kitnets`);
+            const response = await api.get('/kitnets');
             const data = await response.json();
             const found = data.find(k => k.id === parseInt(id));
             if (found) {
@@ -43,7 +43,7 @@ export default function KitnetDetails() {
 
     const fetchHistory = async () => {
         try {
-            const response = await fetch(`${API_URL}/pagamentos/${id}`);
+            const response = await api.get(`/pagamentos/${id}`);
             const data = await response.json();
             setHistory(data);
         } catch (error) {
@@ -55,9 +55,7 @@ export default function KitnetDetails() {
 
     const togglePayment = async () => {
         try {
-            const response = await fetch(`${API_URL}/kitnets/${id}/pagamento`, {
-                method: 'PUT',
-            });
+            const response = await api.put(`/kitnets/${id}/pagamento`);
             if (!response.ok) throw new Error('Erro ao atualizar pagamento');
             const updated = await response.json();
             setKitnet(updated);
@@ -69,9 +67,7 @@ export default function KitnetDetails() {
 
     const deletePayment = async (paymentId) => {
         try {
-            const response = await fetch(`${API_URL}/pagamentos/${paymentId}`, {
-                method: 'DELETE'
-            });
+            const response = await api.delete(`/pagamentos/${paymentId}`);
             if (response.ok) {
                 setHistory(prev => prev.filter(p => p.id !== paymentId));
                 toast.success('Pagamento removido!');
@@ -305,3 +301,4 @@ export default function KitnetDetails() {
         </div>
     );
 }
+

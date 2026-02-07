@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MessageCircle, Power, Loader2 } from 'lucide-react';
-import { API_URL } from '../utils/config';
 import { toast } from 'sonner';
+import { api } from '../utils/api';
 
 export default function WhatsAppToggle() {
     const [ativo, setAtivo] = useState(false);
@@ -16,8 +16,8 @@ export default function WhatsAppToggle() {
     const fetchStatus = async () => {
         try {
             const [configRes, statusRes] = await Promise.all([
-                fetch(`${API_URL}/config/whatsapp`),
-                fetch(`${API_URL}/config/whatsapp/status`)
+                api.get('/config/whatsapp'),
+                api.get('/config/whatsapp/status')
             ]);
 
             const config = await configRes.json();
@@ -35,11 +35,7 @@ export default function WhatsAppToggle() {
     const toggleWhatsApp = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/config/whatsapp`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ativo: !ativo })
-            });
+            const res = await api.put('/config/whatsapp', { ativo: !ativo });
 
             const data = await res.json();
             setAtivo(data.ativo);
@@ -69,8 +65,8 @@ export default function WhatsAppToggle() {
         <button
             onClick={toggleWhatsApp}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${ativo
-                    ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
-                    : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                 }`}
             title={ativo ? 'WhatsApp Bot Ativo - Clique para desativar' : 'WhatsApp Bot Inativo - Clique para ativar'}
         >

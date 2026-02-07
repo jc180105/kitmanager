@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Line, ComposedChart, Area } from 'recharts';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 
 function CashFlowChart({ refreshTrigger }) {
     const [data, setData] = useState([]);
@@ -15,7 +15,7 @@ function CashFlowChart({ refreshTrigger }) {
             try {
                 setLoading(true);
                 // Fetch revenue data
-                const statsRes = await fetch(`${API_URL}/dashboard/stats`);
+                const statsRes = await api.get('/dashboard/stats');
                 const stats = await statsRes.json();
 
                 // Fetch expenses for each month in the chart
@@ -24,7 +24,7 @@ function CashFlowChart({ refreshTrigger }) {
 
                 for (const month of months) {
                     // Fetch expenses for this month
-                    const expRes = await fetch(`${API_URL}/despesas?mes=${month.mes_referencia}`);
+                    const expRes = await api.get(`/despesas?mes=${month.mes_referencia}`);
                     const expenses = await expRes.json();
                     const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.valor), 0);
 

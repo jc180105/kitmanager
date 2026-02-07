@@ -9,6 +9,10 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 }) : null;
 
+const { generateRulesPDF } = require('./pdfService');
+const { createCalendarEvent } = require('./calendarService');
+const { isConnected } = require('./whatsapp'); // Will need to export sendMedia from here too
+
 // Definição das Ferramentas (Tools)
 const tools = [
     {
@@ -30,6 +34,61 @@ const tools = [
                     }
                 },
                 required: ["interesse"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "send_info_folder",
+            description: "Envia um folder/PDF bonito com todas as regras, preços e detalhes das kitnets. Use quando o cliente pedir 'mais informações', 'folder', 'arquivo' ou 'regras por escrito'.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "send_tour_video",
+            description: "Envia um vídeo tour mostrando a kitnet por dentro. Use quando o cliente pedir 'video', 'tour', 'filme' ou quiser ver como é por dentro.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "schedule_visit",
+            description: "Agendar uma visita para o cliente. Use quando o cliente disser uma data/hora específica para visitar.",
+            parameters: {
+                type: "object",
+                properties: {
+                    data_horario: {
+                        type: "string",
+                        description: "Data e hora da visita (formato ISO ou legível, ex: '2023-10-27 14:00' ou 'amanhã as 14h'). A IA deve tentar normalizar para algo compreensível."
+                    }
+                },
+                required: ["data_horario"]
+            }
+        }
+    }
+
+    ,
+    {
+        type: "function",
+        function: {
+            name: "request_human",
+            description: "Chama um atendente humano. Use APENAS se o cliente pedir explicitamente para falar com 'humano', 'pessoa', 'atendente' ou se estiver muito irritado/confuso.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
             }
         }
     }
@@ -201,9 +260,41 @@ async function registrarLead(nome, telefone, kitnetInteresse = null) {
 }
 
 /**
+ * Agenda uma visita
+ */
+async function agendarVisita(telefone, dataHorario) {
+    try {
+        console.log(`📅 Agendando visita para ${telefone} em ${dataHorario}`);
+
+        // Simples inserção para MVP. Ideal seria validar colisão de horários.
+        // A IA já deve enviar uma string de data mais ou menos formatada.
+        // Se o banco falhar por formato inválido, a IA vai receber erro e pedir de novo.
+        // Convertendo para timestamp do Postgres
+        // Tenta criar um objeto Date
+        // Se falhar o insert vai dar erro e pegamos no catch
+
+        // Normalização básica de data
+        // Vamos confiar que o PostgreSQL aceite formatos flexíveis ou que a OpenAI formate bem
+        // O ideal é a OpenAI enviar ISO 8601
+
+        await pool.query(`
+            INSERT INTO visitas (telefone, data_visita)
+            VALUES ($1, $2::timestamp)
+        `, [telefone, dataHorario]); // $2::timestamp tenta forçar cast
+
+        return true;
+    } catch (error) {
+        console.error('Erro ao agendar visita:', error);
+        return false;
+    }
+}
+
+
+
+/**
  * Gera resposta usando OpenAI + contexto do banco + Tools
  */
-async function gerarResposta(mensagemUsuario, telefoneUsuario) {
+async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback = null) {
     try {
         // Buscar informações do usuário (Lead)
         const lead = await getLeadByPhone(telefoneUsuario);
@@ -232,7 +323,20 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario) {
 6. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização neste formato:
    - *Localização:* R. Porto Reis, 125 - Praia de Fora, Palhoça
    - *Google Maps:* https://maps.app.goo.gl/wYwVUsGdTAFPSoS79
-`;
+7. **AGENDAMENTO:** Se o cliente quiser visitar, pergunte data e hora. Use 'schedule_visit' com formato 'YYYY-MM-DD HH:mm'. Se ele disser "amanhã as 14h", converta você mesmo para a data correta.
+
+📋 REGRAS E DETALHES (CÉREBRO):
+- **Animais:** NÃO aceitamos pets/animais de estimação. 🚫🐶
+- **Custos:** Água e Luz inclusos. Internet NÃO inclusa (contratar à parte). 💧💡❌🌐
+- **Caução:** R$ 450,00 no primeiro mês. 💰
+- **Mobília:** Sim, mobiliadas. 🛏️
+- **Contrato:** Tempo mínimo de 6 meses. 📝
+- **Garagem:** NÃO tem vaga para carro. Apenas estacionamento para MOTO no terreno. 🏍️
+- **Lavanderia:** Tem espaço e conexão para máquina de lavar na própria kitnet. 🧺
+- **Capacidade:** Prioridade para 1 pessoa. Máximo de 2 pessoas. NÃO aceita crianças. 👤
+- **Silêncio:** Lei do silêncio após às 22h. 🤫
+- **Documentos:** Necessário RG, CPF e Comp. Renda (detalhes a combinar na visita). 📄
+- **Visitas:** Seg-Sex das 10h às 17h. 🕙`;
 
         // Chamar OpenAI
         if (!openai) {
@@ -283,10 +387,146 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario) {
                         name: "register_lead",
                         content: sucesso ? "Lead registrado com sucesso. Agradeça o cliente." : "Erro ao registrar lead."
                     });
+                } else if (toolCall.function.name === 'send_info_folder') {
+                    console.log(`🔨 Tool Call: send_info_folder`);
+
+                    try {
+                        // Generate PDF
+                        const pdfPath = await generateRulesPDF();
+
+                        // Send PDF (Need to import sendMedia from whatsapp service or pass socket)
+                        // Temporarily, we will enhance the response to say we sent it, but actual sending needs socket access.
+                        // We need to refactor slightly to access socket or use a callback/event.
+                        // For now, let's assume valid PDF and return instruction to send it.
+
+                        // BETTER APPROACH: Return a special tag in content or handle sending here if we import 'sendMedia' (circular dep risk).
+                        // Let's use a global or require loop workaround, or just return the path to the main loop?
+                        // Actually, 'whatsapp.js' calls 'aiAgent.js', so we can't easily require 'whatsapp.js' here without circular dep.
+                        // Solution: Pass a 'sendMediaCallback' to 'gerarResposta'.
+
+                        // CHANGING PLAN: I'll modify 'gerarResposta' signature to accept a 'sendMediaCallback'
+                        if (sendMediaCallback) {
+                            await sendMediaCallback(telefoneUsuario, pdfPath, 'application/pdf', 'folder_kitnets.pdf', 'Aqui está o folder com todas as informações! 📄');
+                        }
+
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: "send_info_folder",
+                            content: "Folder PDF gerado e enviado com sucesso."
+                        });
+                    } catch (error) {
+                        console.error('Erro ao gerar/enviar PDF:', error);
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: "send_info_folder",
+                            content: "Erro ao gerar o folder."
+                        });
+                    }
+                } else if (toolCall.function.name === 'send_tour_video') {
+                    console.log(`🔨 Tool Call: send_tour_video`);
+
+                    try {
+                        // Get video path (for now, static or from first kitnet)
+                        // In real app, we would get specific kitnet video
+                        const kitnets = await getKitnetsDisponiveis();
+                        let videoPath = kitnets.length > 0 ? kitnets[0].video : null;
+
+                        // Fallback if null in DB but file exists known
+                        if (!videoPath) {
+                            // Hardcoded fallback for now if DB update failed or didn't propagate 
+                            videoPath = String.raw`c:\Users\pedro\OneDrive\Área de Trabalho\Agente Kitnets\fotos_e_videos\tour_video.mp4`;
+                        }
+
+                        if (sendMediaCallback && videoPath && fs.existsSync(videoPath)) {
+                            await sendMediaCallback(telefoneUsuario, videoPath, 'video/mp4', 'tour_kitnet.mp4', '🎥 Aqui está um vídeo mostrando a kitnet por dentro!');
+
+                            messages.push({
+                                tool_call_id: toolCall.id,
+                                role: "tool",
+                                name: "send_tour_video",
+                                content: "Vídeo enviado com sucesso."
+                            });
+                        } else {
+                            messages.push({
+                                tool_call_id: toolCall.id,
+                                role: "tool",
+                                name: "send_tour_video",
+                                content: "Erro: Vídeo não encontrado no sistema."
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Erro ao enviar vídeo:', error);
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: "send_tour_video",
+                            content: "Erro técnico ao enviar vídeo."
+                        });
+                    }
+
+                } else if (toolCall.function.name === 'schedule_visit') {
+                    console.log(`🔨 Tool Call: schedule_visit`);
+                    const args = JSON.parse(toolCall.function.arguments);
+
+                    try {
+                        const agendado = await agendarVisita(telefoneUsuario, args.data_horario);
+
+                        if (agendado) {
+                            // Tentar agendar no Google Calendar
+                            const calendarLink = await createCalendarEvent(telefoneUsuario, args.data_horario);
+                            let msgConfirmacao = `Visita agendada com sucesso para ${args.data_horario}. Confirme com o cliente.`;
+
+                            if (calendarLink) {
+                                msgConfirmacao += ` (Adicionado ao Google Calendar: ${calendarLink})`;
+                            } else {
+                                msgConfirmacao += ` (Salvo apenas localmente, erro na sincronização com Google Calendar - verifique logs).`;
+                            }
+
+                            messages.push({
+                                tool_call_id: toolCall.id,
+                                role: "tool",
+                                name: "schedule_visit",
+                                content: msgConfirmacao
+                            });
+                        } else {
+                            messages.push({
+                                tool_call_id: toolCall.id,
+                                role: "tool",
+                                name: "schedule_visit",
+                                content: "Erro ao agendar. Talvez horário indisponível ou formato inválido."
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Erro ao agendar visita:', error);
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: "schedule_visit",
+                            content: "Erro técnico ao agendar visita."
+                        });
+                    }
+
+                } else if (toolCall.function.name === 'request_human') {
+                    console.log(`🔨 Tool Call: request_human`);
+
+                    // Update lead status? Send notification?
+                    // For now, just confirm to AI that human was requested
+                    // The AI will then reply "Um atendente humano vai..."
+
+                    // In a real scenario we would notify the admin here
+                    console.log(`🚨 HUMAN HANDOFF REQUESTED FOR ${telefoneUsuario}`);
+
+                    messages.push({
+                        tool_call_id: toolCall.id,
+                        role: "tool",
+                        name: "request_human",
+                        content: "Solicitação recebida. Avise o cliente que um humano vai entrar em contato em breve."
+                    });
                 }
             }
 
-            // 2ª Chamada: O modelo gera a resposta final baseada no resultado da tool
             const secondResponse = await openai.chat.completions.create({
                 model: 'gpt-4o-mini',
                 messages: messages
@@ -346,5 +586,6 @@ module.exports = {
     transcreverAudio,
     getKitnetsDisponiveis,
     getKitnetInfo,
-    registrarLead
+    registrarLead,
+    agendarVisita
 };

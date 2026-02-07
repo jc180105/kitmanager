@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Home, DollarSign, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 
 export default function KitnetEdit() {
     const { id } = useParams();
@@ -23,7 +23,7 @@ export default function KitnetEdit() {
 
     const fetchKitnet = async () => {
         try {
-            const response = await fetch(`${API_URL}/kitnets`);
+            const response = await api.get('/kitnets');
             const data = await response.json();
             const found = data.find(k => k.id === parseInt(id));
 
@@ -55,13 +55,9 @@ export default function KitnetEdit() {
 
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/kitnets/${id}/detalhes`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    valor: parseFloat(formData.valor),
-                    descricao: formData.descricao.trim()
-                })
+            const response = await api.put(`/kitnets/${id}/detalhes`, {
+                valor: parseFloat(formData.valor),
+                descricao: formData.descricao.trim()
             });
 
             if (!response.ok) throw new Error('Erro ao salvar');

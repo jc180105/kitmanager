@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Receipt, Filter, X, Calendar, DollarSign, Tag, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 
 const CATEGORIES = [
     { value: 'Manutenção', label: 'Manutenção', color: 'amber' },
@@ -34,7 +34,7 @@ function ExpenseManager({ onUpdate }) {
     const fetchExpenses = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/despesas?mes=${selectedMonth}`);
+            const response = await api.get(`/despesas?mes=${selectedMonth}`);
             if (!response.ok) throw new Error('Erro ao buscar despesas');
             const data = await response.json();
             setExpenses(data);
@@ -84,20 +84,17 @@ function ExpenseManager({ onUpdate }) {
         }
 
         try {
-            const url = editingExpense
-                ? `${API_URL}/despesas/${editingExpense.id}`
-                : `${API_URL}/despesas`;
+            let response;
+            const payload = {
+                ...formData,
+                valor: parseFloat(formData.valor)
+            };
 
-            const method = editingExpense ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    valor: parseFloat(formData.valor)
-                })
-            });
+            if (editingExpense) {
+                response = await api.put(`/despesas/${editingExpense.id}`, payload);
+            } else {
+                response = await api.post('/despesas', payload);
+            }
 
             if (!response.ok) throw new Error('Erro ao salvar despesa');
 
@@ -115,9 +112,7 @@ function ExpenseManager({ onUpdate }) {
         if (!confirm('Tem certeza que deseja excluir esta despesa?')) return;
 
         try {
-            const response = await fetch(`${API_URL}/despesas/${id}`, {
-                method: 'DELETE'
-            });
+            const response = await api.delete(`/despesas/${id}`);
 
             if (!response.ok) throw new Error('Erro ao excluir despesa');
 

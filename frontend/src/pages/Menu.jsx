@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Database, RefreshCw, Home, History, MessageCircle, User } from 'lucide-react';
+import { Database, RefreshCw, Home, History, MessageCircle, User, Download, Loader2 } from 'lucide-react';
 import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 import WhatsAppButton from '../components/WhatsAppButton';
 import ExportButton from '../components/ExportButton';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function MenuPage() {
     const [kitnets, setKitnets] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [downloadingBackup, setDownloadingBackup] = useState(false);
 
     const fetchKitnets = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/kitnets`);
+            const response = await api.get('/kitnets');
             if (response.ok) {
                 const data = await response.json();
                 setKitnets(data);
@@ -21,6 +24,33 @@ export default function MenuPage() {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadBackup = async (e) => {
+        e.preventDefault();
+        setDownloadingBackup(true);
+        try {
+            // Use api.get with raw response to get blob, passing auth headers
+            const response = await api.get('/backup');
+
+            if (!response.ok) throw new Error('Falha ao baixar backup');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `backup-${new Date().toISOString().split('T')[0]}.sql`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast.success('Backup baixado com sucesso!');
+        } catch (error) {
+            console.error('Erro no backup:', error);
+            toast.error('Erro ao baixar backup.');
+        } finally {
+            setDownloadingBackup(false);
         }
     };
 
@@ -79,20 +109,25 @@ export default function MenuPage() {
                             color="blue"
                         />
 
-                        <a
-                            href={`${API_URL}/backup`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 px-4 py-3 bg-slate-700/30 hover:bg-slate-700/50 text-slate-200 rounded-xl transition-colors"
+                        <button
+                            onClick={handleDownloadBackup}
+                            disabled={downloadingBackup}
+                            className="flex items-center gap-3 px-4 py-3 bg-slate-700/30 hover:bg-slate-700/50 text-slate-200 rounded-xl transition-colors w-full text-left"
                         >
                             <div className="p-2 bg-slate-700 rounded-lg">
-                                <Database className="w-5 h-5 text-blue-400" />
+                                {downloadingBackup ? (
+                                    <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                                ) : (
+                                    <Database className="w-5 h-5 text-blue-400" />
+                                )}
                             </div>
                             <div className="flex-1">
                                 <span className="block font-medium">Backup do Banco</span>
-                                <span className="text-xs text-slate-500">Baixar cópia de segurança</span>
+                                <span className="text-xs text-slate-500">
+                                    {downloadingBackup ? 'Gerando arquivo...' : 'Baixar cópia de segurança'}
+                                </span>
                             </div>
-                        </a>
+                        </button>
 
                         <Link
                             to="/history"

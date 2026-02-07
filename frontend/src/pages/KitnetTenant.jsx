@@ -5,7 +5,7 @@ import {
     Loader2, Save, User
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 import { generateContract } from '../utils/generateContract';
 import DocumentManager from '../components/DocumentManager';
 
@@ -56,7 +56,7 @@ export default function KitnetTenant() {
 
     const fetchKitnet = async () => {
         try {
-            const response = await fetch(`${API_URL}/kitnets`);
+            const response = await api.get('/kitnets');
             const data = await response.json();
             const found = data.find(k => k.id === parseInt(id));
 
@@ -107,17 +107,13 @@ export default function KitnetTenant() {
 
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/kitnets/${id}/inquilino`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    inquilino_nome: formData.inquilino_nome.trim(),
-                    inquilino_telefone: formData.inquilino_telefone || null,
-                    inquilino_cpf: formData.inquilino_cpf || null,
-                    inquilino_rg: formData.inquilino_rg || null,
-                    data_entrada: formData.data_entrada || null,
-                    dia_vencimento: formData.dia_vencimento ? parseInt(formData.dia_vencimento) : null,
-                }),
+            const response = await api.put(`/kitnets/${id}/inquilino`, {
+                inquilino_nome: formData.inquilino_nome.trim(),
+                inquilino_telefone: formData.inquilino_telefone || null,
+                inquilino_cpf: formData.inquilino_cpf || null,
+                inquilino_rg: formData.inquilino_rg || null,
+                data_entrada: formData.data_entrada || null,
+                dia_vencimento: formData.dia_vencimento ? parseInt(formData.dia_vencimento) : null,
             });
 
             if (!response.ok) {

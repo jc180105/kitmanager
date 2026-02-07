@@ -5,6 +5,7 @@ const { gerarResposta, transcreverAudio } = require('./aiAgent');
 
 let sock = null;
 let currentQR = null;
+const messageRateLimit = new Map(); // Armazena timestamp da última mensagem por usuário
 let makeWASocket, DisconnectReason, useMultiFileAuthState, downloadMediaMessage;
 
 // Inicializar OpenAI para transcrição
@@ -12,6 +13,42 @@ let makeWASocket, DisconnectReason, useMultiFileAuthState, downloadMediaMessage;
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 }) : null;
+
+// Função para enviar mídia (necessária para o agente)
+async function sendMedia(telefone, mediaPath, mimetype, fileName, caption) {
+    if (!sock) return;
+
+    try {
+        const buffer = fs.readFileSync(mediaPath);
+
+
+        let messagePayload = {};
+        if (mimetype.startsWith('video/')) {
+            messagePayload = {
+                video: buffer,
+                caption: caption,
+                gifPlayback: false
+            };
+        } else if (mimetype.startsWith('image/')) {
+            messagePayload = {
+                image: buffer,
+                caption: caption
+            };
+        } else {
+            messagePayload = {
+                document: buffer,
+                mimetype: mimetype,
+                fileName: fileName,
+                caption: caption
+            };
+        }
+
+        await sock.sendMessage(telefone, messagePayload);
+        console.log(`📎 Mídia enviada para ${telefone}: ${fileName}`);
+    } catch (error) {
+        console.error('Erro ao enviar mídia:', error);
+    }
+}
 
 /**
  * Carrega Baileys dinamicamente (ESM)
@@ -120,6 +157,17 @@ async function initWhatsApp() {
 
         const remetente = msg.key.participant || msg.key.remoteJid;
         const telefone = remetente.replace('@s.whatsapp.net', '').replace('@lid', '');
+
+        // Rate Limiting (3 segundos entre mensagens)
+        const now = Date.now();
+        const lastMessageTime = messageRateLimit.get(remetente) || 0;
+
+        if (now - lastMessageTime < 3000) {
+            console.log(`⏳ Rate Limit: Ignorando mensagem de ${telefone} (muito rápido)`);
+            return;
+        }
+        messageRateLimit.set(remetente, now);
+
         let textoMensagem = '';
 
         const audioMessage = msg.message.audioMessage;
@@ -149,9 +197,13 @@ async function initWhatsApp() {
 
         try {
             await sock.sendPresenceUpdate('composing', remetente);
-            const resposta = await gerarResposta(textoMensagem, telefone);
-            await sock.sendMessage(remetente, { text: resposta });
-            console.log(`📤 Resposta enviada para ${telefone}`);
+            // Gerar resposta com IA (passando callback de mídia)
+            const resposta = await gerarResposta(textoMensagem, remetente, sendMedia);
+
+            if (resposta) {
+                await sock.sendMessage(remetente, { text: resposta });
+                console.log(`📤 Resposta enviada para ${telefone}`);
+            }
         } catch (error) {
             console.error('Erro ao processar mensagem:', error);
             await sock.sendMessage(remetente, { text: 'Desculpe, ocorreu um erro. Tente novamente.' });

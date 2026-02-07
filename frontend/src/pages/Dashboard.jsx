@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, LayoutDashboard, Receipt, FileText, TrendingUp, AlertCircle, Calendar } from 'lucide-react';
+import { api } from '../utils/api';
 import FinancialSummary from '../components/FinancialSummary';
 import CashFlowChart from '../components/CashFlowChart';
 import ExpenseManager from '../components/ExpenseManager';
-import { API_URL } from '../utils/config';
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -19,12 +19,12 @@ export default function Dashboard() {
             setLoading(true);
 
             // Fetch Stats
-            const statsRes = await fetch(`${API_URL}/dashboard/stats`);
+            const statsRes = await api.get('/dashboard/stats');
             const statsJson = await statsRes.json();
             setData(statsJson);
 
             // Fetch Notifications (Vencimentos)
-            const notifRes = await fetch(`${API_URL}/kitnets/vencimentos`);
+            const notifRes = await api.get('/kitnets/vencimentos');
             if (notifRes.ok) {
                 const notifJson = await notifRes.json();
                 setNotifications(notifJson);
@@ -78,8 +78,8 @@ export default function Dashboard() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${isActive
-                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                                 }`}
                         >
                             <Icon className="w-4 h-4" />
@@ -155,7 +155,7 @@ export default function Dashboard() {
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="text-emerald-400 font-bold text-sm">{formatCurrency(item.valor)}</p>
-                                                            <p className="text-[10px] text-slate-500">Dia {item.dia_vencimento}</p>
+                                                            <p className="text-xs text-slate-500">Dia {item.dia_vencimento}</p>
                                                         </div>
                                                     </div>
                                                 );

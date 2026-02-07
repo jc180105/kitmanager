@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Upload, Trash2, FileText, ImageIcon, Loader2 } from 'lucide-react';
 import CameraCapture from './CameraCapture';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { api } from '../utils/api';
+import { API_URL } from '../utils/config';
 
 function DocumentManager({ kitnetId }) {
     const [documents, setDocuments] = useState([]);
@@ -20,7 +20,7 @@ function DocumentManager({ kitnetId }) {
     const fetchDocuments = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/kitnets/${kitnetId}/documentos`);
+            const res = await api.get(`/kitnets/${kitnetId}/documentos`);
             if (res.ok) {
                 const data = await res.json();
                 setDocuments(data);
@@ -50,10 +50,8 @@ function DocumentManager({ kitnetId }) {
         formData.append('kitnet_id', kitnetId);
 
         try {
-            const res = await fetch(`${API_URL}/upload`, {
-                method: 'POST',
-                body: formData
-            });
+            // api.js automatically handles Content-Type for FormData (leaves it undefined so browser sets it with boundary)
+            const res = await api.post('/upload', formData);
 
             if (res.ok) {
                 await fetchDocuments();
@@ -71,9 +69,7 @@ function DocumentManager({ kitnetId }) {
         if (!confirm('Tem certeza que deseja excluir este documento?')) return;
 
         try {
-            const res = await fetch(`${API_URL}/documentos/${id}`, {
-                method: 'DELETE'
-            });
+            const res = await api.delete(`/documentos/${id}`);
 
             if (res.ok) {
                 setDocuments(prev => prev.filter(doc => doc.id !== id));

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, DollarSign, Loader2, Trash2, FileText } from 'lucide-react';
 import MobileDrawer from './MobileDrawer';
+import { api } from '../utils/api';
 
 function PaymentHistoryModal({ kitnet, onClose }) {
     const [history, setHistory] = useState([]);
@@ -12,8 +13,7 @@ function PaymentHistoryModal({ kitnet, onClose }) {
 
     const fetchHistory = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${API_URL}/pagamentos/${kitnet.id}`);
+            const response = await api.get(`/pagamentos/${kitnet.id}`);
             const data = await response.json();
             setHistory(data);
         } catch (error) {
@@ -27,10 +27,7 @@ function PaymentHistoryModal({ kitnet, onClose }) {
         if (!confirm('Tem certeza que deseja excluir este registro de pagamento?')) return;
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${API_URL}/pagamentos/${id}`, {
-                method: 'DELETE',
-            });
+            const response = await api.delete(`/pagamentos/${id}`);
 
             if (response.ok) {
                 setHistory(prev => prev.filter(item => item.id !== id));

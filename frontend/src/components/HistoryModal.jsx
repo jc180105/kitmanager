@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, History, ArrowRight, Loader2 } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { api } from '../utils/api';
 
 function HistoryModal({ onClose }) {
     const [history, setHistory] = useState([]);
@@ -11,7 +10,7 @@ function HistoryModal({ onClose }) {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const response = await fetch(`${API_URL}/historico?limit=50`);
+                const response = await api.get('/historico?limit=50');
                 if (!response.ok) throw new Error('Erro ao buscar histórico');
                 const data = await response.json();
                 setHistory(data);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Wallet, Banknote, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 
 export default function KitnetPayment() {
     const { id } = useParams();
@@ -19,7 +19,7 @@ export default function KitnetPayment() {
 
     const fetchKitnet = async () => {
         try {
-            const response = await fetch(`${API_URL}/kitnets`);
+            const response = await api.get('/kitnets');
             if (!response.ok) throw new Error('Erro ao carregar kitnets');
             const data = await response.json();
             const found = data.find(k => k.id === parseInt(id));
@@ -48,12 +48,8 @@ export default function KitnetPayment() {
         try {
             const finalMethod = method === 'Pix' ? `${method} - ${account}` : method;
 
-            const response = await fetch(`${API_URL}/kitnets/${id}/pagamento`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    forma_pagamento: finalMethod
-                }),
+            const response = await api.put(`/kitnets/${id}/pagamento`, {
+                forma_pagamento: finalMethod
             });
 
             if (!response.ok) {

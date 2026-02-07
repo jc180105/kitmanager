@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, RefreshCw, Smartphone, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { API_URL } from '../utils/config';
 import { toast } from 'sonner';
+import { api } from '../utils/api';
 
 export default function WhatsAppConfig() {
     const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function WhatsAppConfig() {
     const fetchQR = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/qr`);
+            const response = await api.get('/qr');
             if (!response.ok) throw new Error('Erro ao buscar QR Code');
             const data = await response.json();
 

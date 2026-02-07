@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, TrendingUp, Users, DollarSign, Loader2, Wallet } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { api } from '../utils/api';
 
 function DashboardModal({ onClose }) {
     const [data, setData] = useState(null);
@@ -12,8 +13,7 @@ function DashboardModal({ onClose }) {
 
     const fetchDashboard = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const res = await fetch(`${API_URL}/dashboard/stats`);
+            const res = await api.get('/dashboard/stats');
             const json = await res.json();
             setData(json);
         } catch (err) {
@@ -156,8 +156,8 @@ function DashboardModal({ onClose }) {
                                         stroke="#94a3b8"
                                         tick={{ fill: '#94a3b8', fontSize: 12 }}
                                         tickLine={false}
-                                        axisLine={false}
                                         tickFormatter={(value) => `R$ ${value}`}
+                                        axisLine={false}
                                     />
                                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                                     <Bar dataKey="total" radius={[6, 6, 0, 0]}>

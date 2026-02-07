@@ -3,6 +3,7 @@ import { User, Phone, Calendar, CreditCard, History, FileText, MessageCircle, Ed
 import { generateContract } from '../utils/generateContract';
 import { toast } from 'sonner';
 import MobileDrawer from './MobileDrawer';
+import { api } from '../utils/api';
 
 function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
     const [history, setHistory] = useState([]);
@@ -14,8 +15,7 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
 
     const fetchHistory = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${API_URL}/pagamentos/${kitnet.id}`);
+            const response = await api.get(`/pagamentos/${kitnet.id}`);
             const data = await response.json();
             setHistory(data);
         } catch (error) {
@@ -27,10 +27,7 @@ function KitnetDetailsModal({ kitnet, onClose, onEdit, onTogglePayment }) {
 
     const deletePayment = async (paymentId) => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${API_URL}/pagamentos/${paymentId}`, {
-                method: 'DELETE'
-            });
+            const response = await api.delete(`/pagamentos/${paymentId}`);
 
             if (response.ok) {
                 setHistory(prev => prev.filter(p => p.id !== paymentId));

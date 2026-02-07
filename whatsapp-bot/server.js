@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const { initWhatsApp, isConnected, getQR } = require('./services/whatsapp');
+const { initCron } = require('./services/cronService');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -35,6 +36,7 @@ app.listen(PORT, async () => {
 
     try {
         await initWhatsApp();
+        initCron();
     } catch (error) {
         console.error('❌ Erro ao inicializar WhatsApp:', error);
         console.log('⚠️ Bot continuará rodando. Tente reiniciar.');

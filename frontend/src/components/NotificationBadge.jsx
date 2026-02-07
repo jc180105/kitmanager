@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, X, AlertTriangle, Calendar } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { api } from '../utils/api';
 
 function NotificationBadge() {
     const [notifications, setNotifications] = useState([]);
@@ -24,7 +23,7 @@ function NotificationBadge() {
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
-                const response = await fetch(`${API_URL}/kitnets/vencimentos`);
+                const response = await api.get('/kitnets/vencimentos');
                 if (response.ok) {
                     const data = await response.json();
                     setNotifications(data);
@@ -44,7 +43,7 @@ function NotificationBadge() {
 
     const getDaysUntilDue = (diaVencimento) => {
         const today = new Date();
-        const currentDay = today.getDate();
+        const currentDate = today.getDate();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
 

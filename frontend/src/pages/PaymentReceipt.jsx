@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Calendar, DollarSign, User, FileText, CheckCircle2, Home, CreditCard } from 'lucide-react';
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 
 export default function PaymentReceipt() {
     const { id } = useParams();
@@ -12,9 +12,8 @@ export default function PaymentReceipt() {
 
     useEffect(() => {
         const fetchPaymentDetails = async () => {
-            console.log(`Fetching payment ${id} from ${API_URL}`);
             try {
-                const response = await fetch(`${API_URL}/pagamentos/detalhes/${id}`);
+                const response = await api.get(`/pagamentos/detalhes/${id}`);
                 if (!response.ok) throw new Error('Pagamento não encontrado');
                 const data = await response.json();
                 setPayment(data);

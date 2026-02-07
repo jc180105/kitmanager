@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Phone, Search, Archive, MessageCircle, Trash2, Loader2, Calendar, CheckCircle, MapPin, ArrowRight, Plus, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import LeadModal from '../components/LeadModal';
-
-// URL do Backend para leads
-import { API_URL } from '../utils/config';
+import { api } from '../utils/api';
 
 export default function Leads() {
     const [leads, setLeads] = useState([]);
@@ -24,7 +22,7 @@ export default function Leads() {
 
     const fetchLeads = async () => {
         try {
-            const response = await fetch(`${API_URL}/leads`);
+            const response = await api.get('/leads');
             if (response.ok) {
                 const data = await response.json();
                 setLeads(data);
@@ -40,17 +38,14 @@ export default function Leads() {
     };
 
     const handleSaveLead = async (leadData) => {
-        const method = leadData.id ? 'PUT' : 'POST';
-        const url = leadData.id ? `${API_URL}/leads/${leadData.id}` : `${API_URL}/leads`;
+        const url = leadData.id ? `/leads/${leadData.id}` : '/leads';
 
         // Se for novo, garante status 'novo'
         if (!leadData.id) leadData.status = 'novo';
 
-        const response = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(leadData)
-        });
+        const response = leadData.id
+            ? await api.put(url, leadData)
+            : await api.post(url, leadData);
 
         if (response.ok) {
             toast.success(leadData.id ? 'Lead atualizado!' : 'Lead criado!');
@@ -76,11 +71,7 @@ export default function Leads() {
             // Optimistic update
             setLeads(leads.map(l => l.id === id ? { ...l, status: newStatus } : l));
 
-            const response = await fetch(`${API_URL}/leads/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
+            const response = await api.put(`/leads/${id}`, { status: newStatus });
 
             if (response.ok) {
                 toast.success(`Leads movido para ${getStatusLabel(newStatus)}`);
@@ -98,7 +89,7 @@ export default function Leads() {
     const handleDelete = async (id) => {
         if (!confirm('Tem certeza que deseja excluir este lead?')) return;
         try {
-            const response = await fetch(`${API_URL}/leads/${id}`, { method: 'DELETE' });
+            const response = await api.delete(`/leads/${id}`);
             if (response.ok) {
                 setLeads(leads.filter(l => l.id !== id));
                 toast.success('Lead removido');

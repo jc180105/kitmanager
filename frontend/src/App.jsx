@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Layout from './components/Layout';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './pages/Login';
 
 // Lazy load pages for better performance
 const Home = lazy(() => import('./pages/Home'));
@@ -23,27 +25,48 @@ const PageLoader = () => (
   </div>
 );
 
+// Private Route Wrapper
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <PageLoader />;
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="history" element={<HistoryPage />} />
-            <Route path="menu" element={<MenuPage />} />
-            <Route path="kitnet/:id" element={<KitnetDetails />} />
-            <Route path="kitnet/:id/inquilino" element={<KitnetTenant />} />
-            <Route path="kitnet/:id/pagamento" element={<KitnetPayment />} />
-            <Route path="kitnet/:id/editar" element={<KitnetEdit />} />
-            <Route path="config" element={<Configuration />} />
-            <Route path="whatsapp" element={<WhatsAppConfig />} />
-            <Route path="leads" element={<Leads />} />
-            <Route path="pagamento/:id" element={<PaymentReceipt />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public Route */}
+            <Route path="/login" element={<Login />} />
+
+            {/* Protected Routes */}
+            <Route path="/" element={
+              <PrivateRoute>
+                <Layout />
+              </PrivateRoute>
+            }>
+              <Route index element={<Home />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="history" element={<HistoryPage />} />
+              <Route path="menu" element={<MenuPage />} />
+              <Route path="kitnet/:id" element={<KitnetDetails />} />
+              <Route path="kitnet/:id/inquilino" element={<KitnetTenant />} />
+              <Route path="kitnet/:id/pagamento" element={<KitnetPayment />} />
+              <Route path="kitnet/:id/editar" element={<KitnetEdit />} />
+              <Route path="config" element={<Configuration />} />
+              <Route path="whatsapp" element={<WhatsAppConfig />} />
+              <Route path="leads" element={<Leads />} />
+              <Route path="pagamento/:id" element={<PaymentReceipt />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
