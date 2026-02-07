@@ -111,14 +111,59 @@ export default function Leads() {
     const formatPhone = (phone) => {
         if (!phone) return '-';
         let p = phone.replace(/\D/g, '');
-        if (p.startsWith('55') && p.length > 11) p = p.substring(2);
 
-        if (p.length === 11) return `(${p.substring(0, 2)}) ${p.substring(2, 7)}-${p.substring(7)}`;
+        // Remove 55 if likely country code
+        if (p.startsWith('55') && p.length > 11) {
+            p = p.substring(2);
+        }
+
+        // Handle numbers with trailing garbage (heuristic)
+        if (p.length > 11) {
+            const ddd = parseInt(p.substring(0, 2));
+            if (ddd >= 11 && ddd <= 99) {
+                const thirdDigit = parseInt(p.substring(2, 3));
+                if (thirdDigit === 9) {
+                    // Likely Mobile (11 digits)
+                    p = p.substring(0, 11);
+                } else if (thirdDigit >= 2 && thirdDigit <= 5) {
+                    // Likely Landline (10 digits)
+                    p = p.substring(0, 10);
+                }
+            }
+        }
+
+        // Format Mobile: (XX) XXXXX-XXXX
+        if (p.length === 11) {
+            return `(${p.substring(0, 2)}) ${p.substring(2, 7)}-${p.substring(7)}`;
+        }
+
+        // Format Landline: (XX) XXXX-XXXX
+        if (p.length === 10) {
+            return `(${p.substring(0, 2)}) ${p.substring(2, 6)}-${p.substring(6)}`;
+        }
+
         return phone;
     };
 
     const openWhatsApp = (phone) => {
         let p = phone.replace(/\D/g, '');
+
+        // Reuse truncation logic for cleaner link
+        if (p.startsWith('55') && p.length > 13) p = p.substring(2);
+        if (p.length > 11) {
+            const ddd = parseInt(p.substring(0, 2));
+            if (ddd >= 11 && ddd <= 99) {
+                const third = parseInt(p.substring(2, 3));
+                if (third === 9) p = p.substring(0, 11);
+                else if (third >= 2 && third <= 5) p = p.substring(0, 10);
+            }
+        }
+
+        // Ensure country code 55
+        if (!p.startsWith('55')) {
+            p = '55' + p;
+        }
+
         window.open(`https://wa.me/${p}`, '_blank');
     };
 
