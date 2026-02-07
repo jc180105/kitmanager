@@ -178,29 +178,33 @@ export default function PaymentReceipt() {
                         margin: 0;
                         size: auto;
                     }
-                    body {
+                    body * {
+                        visibility: hidden;
+                    }
+                    #receipt, #receipt * {
+                        visibility: visible;
+                    }
+                    #receipt {
+                        position: fixed;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        margin: 0;
+                        padding: 40px;
+                        z-index: 9999;
                         background: white;
-                        color: black;
+                        border: none;
+                        box-shadow: none;
                     }
                     .print\\:hidden {
                         display: none !important;
-                    }
-                    .print\\:shadow-none {
-                        box-shadow: none !important;
-                    }
-                    .print\\:rounded-none {
-                        border-radius: 0 !important;
                     }
                     .print\\:bg-transparent {
                         background: transparent !important;
                     }
                     .print\\:border-slate-300 {
                         border-color: #cbd5e1 !important;
-                    }
-                    #receipt {
-                        max-width: 100%;
-                        width: 100%;
-                        border: none;
                     }
                 }
             `}</style>
