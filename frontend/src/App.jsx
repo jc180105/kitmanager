@@ -14,6 +14,7 @@ const KitnetEdit = lazy(() => import('./pages/KitnetEdit'));
 const Configuration = lazy(() => import('./pages/Configuration'));
 const WhatsAppConfig = lazy(() => import('./pages/WhatsAppConfig'));
 const Leads = lazy(() => import('./pages/Leads'));
+const PaymentReceipt = lazy(() => import('./pages/PaymentReceipt'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -39,6 +40,7 @@ function App() {
             <Route path="config" element={<Configuration />} />
             <Route path="whatsapp" element={<WhatsAppConfig />} />
             <Route path="leads" element={<Leads />} />
+            <Route path="pagamento/:id" element={<PaymentReceipt />} />
           </Route>
         </Routes>
       </Suspense>

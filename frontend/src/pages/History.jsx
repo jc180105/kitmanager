@@ -174,7 +174,7 @@ export default function HistoryPage() {
                                 <div
                                     key={itemId}
                                     className={`transition-colors cursor-pointer ${isExpanded ? 'bg-slate-700/30' : 'hover:bg-slate-800/50'}`}
-                                    onClick={() => toggleExpand(itemId)}
+                                    onClick={() => item.tipo === 'pagamento' ? navigate(`/pagamento/${item.id}`) : toggleExpand(itemId)}
                                 >
                                     {/* Main Row */}
                                     <div className="p-4 sm:p-5">

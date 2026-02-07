@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, DollarSign, Loader2, Trash2 } from 'lucide-react';
+import { Calendar, DollarSign, Loader2, Trash2, FileText } from 'lucide-react';
 import MobileDrawer from './MobileDrawer';
 
 function PaymentHistoryModal({ kitnet, onClose }) {
@@ -120,13 +120,14 @@ function PaymentHistoryModal({ kitnet, onClose }) {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 sm:gap-3">
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-wider">Data</p>
-                                        <p className="text-xs text-slate-300">
-                                            {formatDate(record.data_pagamento)}
-                                        </p>
-                                    </div>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => window.location.href = `/pagamento/${record.id}`}
+                                        className="p-2 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                        title="Ver Recibo"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                    </button>
                                     <button
                                         onClick={() => handleDelete(record.id)}
                                         className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors ml-1"

@@ -7,9 +7,16 @@ export const getApiUrl = () => {
         return 'https://kitmanager-production.up.railway.app';
     }
 
-    // 3. Localhost Fallback - UPDATED: Default to Railway Backend as user has no local backend
+    // 3. Localhost Fallback
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Return Railway URL here too if user wants to ALWAYS use Railway backend
+        // But for development usually we want local. 
+        // User said: "always use backend from railway". 
+        // So I will make localhost ALSO point to Railway.
+        return 'https://kitmanager-production.up.railway.app';
+    }
+
     return 'https://kitmanager-production.up.railway.app';
-    // return 'http://localhost:3001'; 
 };
 
 export const API_URL = getApiUrl();
