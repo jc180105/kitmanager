@@ -117,20 +117,22 @@ export default function Leads() {
             p = p.substring(2);
         }
 
-        // Handle numbers with trailing garbage (heuristic)
-        if (p.length > 11) {
+        // Handle numbers with trailing garbage (heuristic for small garbage)
+        if (p.length > 11 && p.length <= 13) {
             const ddd = parseInt(p.substring(0, 2));
             if (ddd >= 11 && ddd <= 99) {
                 const thirdDigit = parseInt(p.substring(2, 3));
                 if (thirdDigit === 9) {
-                    // Likely Mobile (11 digits)
                     p = p.substring(0, 11);
                 } else if (thirdDigit >= 2 && thirdDigit <= 5) {
-                    // Likely Landline (10 digits)
                     p = p.substring(0, 10);
                 }
             }
         }
+
+        // If still too long, it's likely a WhatsApp LID or internal ID. 
+        // Return raw to avoid misleading formatting (e.g. (18) ... for a LID)
+        if (p.length > 11) return phone;
 
         // Format Mobile: (XX) XXXXX-XXXX
         if (p.length === 11) {
@@ -150,6 +152,16 @@ export default function Leads() {
 
         // Reuse truncation logic for cleaner link
         if (p.startsWith('55') && p.length > 13) p = p.substring(2);
+
+        // If it's a LID (very long), we can't easily open a WA link.
+        // But we try anyway with what we have, or maybe 55+LID won't work.
+        // Best effort:
+        if (p.length > 13) {
+            // It's a LID. WA links don't work well with LIDs usually.
+            // Just return cleaned number.
+            return window.open(`https://wa.me/${p}`, '_blank');
+        }
+
         if (p.length > 11) {
             const ddd = parseInt(p.substring(0, 2));
             if (ddd >= 11 && ddd <= 99) {
