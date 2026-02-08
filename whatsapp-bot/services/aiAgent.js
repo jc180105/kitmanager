@@ -181,16 +181,18 @@ async function saveMessage(telefone, role, content) {
         // Auto-fix: Se o erro for de tamanho de coluna (22001), tenta aumentar a coluna
         if (error.code === '22001') {
             try {
-                console.log('🔧 Tentando aumentar tamanho da coluna telefone...');
+                console.log('🔧 (Auto-fix) Tentando aumentar tamanho da coluna telefone...');
                 await pool.query('ALTER TABLE whatsapp_messages ALTER COLUMN telefone TYPE VARCHAR(60)');
+                console.log('✅ Coluna alterada com sucesso! Tentando salvar novamente...');
+
                 // Tenta salvar de novo
                 await pool.query(
                     'INSERT INTO whatsapp_messages (telefone, role, content) VALUES ($1, $2, $3)',
                     [telefone, role, content]
                 );
-                console.log('✅ Mensagem salva após migração de schema!');
+                console.log('✅ Mensagem salva (Recovered)!');
             } catch (err2) {
-                console.error('Erro crítico ao salvar mensagem:', err2);
+                console.error('❌ Falha crítica ao salvar mensagem após tentativa de correção:', err2);
             }
         }
     }
