@@ -27,6 +27,14 @@ const tools = [
                         type: "string",
                         description: "Nome do cliente, se fornecido. Se não souber, use null ou 'Desconhecido'."
                     },
+                    pessoas_familia: {
+                        type: "string",
+                        description: "Quantas pessoas vão morar (ex: '2 adultos', 'eu e esposa', '3')."
+                    },
+                    renda: {
+                        type: "string",
+                        description: "Descrição da renda ou profissão (ex: 'sou pedreiro', 'aposentado', 'trabalho CLT')."
+                    },
                     interesse: {
                         type: "string",
                         enum: ["novo", "visita"],
@@ -236,11 +244,11 @@ async function getKitnetInfo(numero) {
 /**
  * Registra um lead interessado
  */
-async function registrarLead(nome, telefone, kitnetInteresse = null) {
+async function registrarLead(nome, telefone, kitnetInteresse = null, pessoasFamilia = null, renda = null) {
     try {
         console.log(`📝 Registrando Lead: ${nome || 'Nome não inf.'} - ${telefone}`);
 
-        // Primeiro cria a tabela se não existir (garantindo VARCHAR(60))
+        // Ensure table exists with new columns
         await pool.query(`
             CREATE TABLE IF NOT EXISTS leads (
                 id SERIAL PRIMARY KEY,
@@ -248,9 +256,20 @@ async function registrarLead(nome, telefone, kitnetInteresse = null) {
                 telefone VARCHAR(60) UNIQUE,
                 kitnet_interesse INTEGER,
                 data_contato TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status VARCHAR(20) DEFAULT 'novo'
+                status VARCHAR(20) DEFAULT 'novo',
+                pessoas_familia VARCHAR(100),
+                renda VARCHAR(200)
             )
         `);
+
+        // Migration: Attempt to add columns if they don't exist (for existing tables)
+        try {
+            await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS pessoas_familia VARCHAR(100)`);
+            await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS renda VARCHAR(200)`);
+        } catch (migErr) {
+            // Ignore if columns exist or other harmless error
+            console.log('Migration check passed or skipped');
+        }
 
         // Verifica se o lead já existe para não sobrescrever nome existente com null
         const existingLead = await getLeadByPhone(telefone);
@@ -262,14 +281,16 @@ async function registrarLead(nome, telefone, kitnetInteresse = null) {
         }
 
         await pool.query(`
-            INSERT INTO leads (nome, telefone, kitnet_interesse)
-            VALUES ($1, $2, $3)
+            INSERT INTO leads (nome, telefone, kitnet_interesse, pessoas_familia, renda)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (telefone) 
             DO UPDATE SET 
                 data_contato = CURRENT_TIMESTAMP, 
                 kitnet_interesse = COALESCE($3, leads.kitnet_interesse),
-                nome = COALESCE($1, leads.nome)
-        `, [nomeFinal, telefone, kitnetInteresse]);
+                nome = COALESCE($1, leads.nome),
+                pessoas_familia = COALESCE($4, leads.pessoas_familia),
+                renda = COALESCE($5, leads.renda)
+        `, [nomeFinal, telefone, kitnetInteresse, pessoasFamilia, renda]);
 
         return true;
     } catch (error) {
@@ -356,7 +377,20 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
 - **Capacidade:** Prioridade para 1 pessoa. Máximo de 2 pessoas. NÃO aceita crianças. 👤
 - **Silêncio:** Lei do silêncio após às 22h. 🤫
 - **Documentos:** Necessário RG, CPF e Comp. Renda (detalhes a combinar na visita). 📄
-- **Visitas:** Seg-Sex das 10h às 17h. 🕙`;
+- Visitas: Seg-Sex das 10h às 17h. 🕙
+
+IMPORTANTÍSSIMO - QUALIFICAÇÃO DE LEADS (FILTRO):
+Antes de agendar visita ou passar contato, você DEVE obter estas 2 informações:
+1. Quantas pessoas vão morar? (Ideal: 1 pessoa. Máx: 2. Sem crianças.)
+2. Qual a renda/trabalho? (Para garantir que consegue pagar).
+
+Se o cliente perguntar de visita, diga: "Claro! Antes de agendarmos, me tira duas dúvidas rapidinho para eu verificar se o perfil se encaixa nas regras do condomínio:
+1. Quantas pessoas morariam no imóvel?
+2. Com o que você trabalha atualmente?"
+
+NÃO agende se ele não responder.
+Se disser que tem animais: NEGUE educadamente (regras do condomínio).
+Se disser "carro": Avise que NÃO tem vaga de carro (só moto).`;
 
         // Chamar OpenAI
         if (!openai) {
@@ -399,7 +433,7 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
                     const args = JSON.parse(toolCall.function.arguments);
                     console.log(`🔨 Tool Call: register_lead`, args);
 
-                    const sucesso = await registrarLead(args.nome, telefoneUsuario);
+                    const sucesso = await registrarLead(args.nome, telefoneUsuario, null, args.pessoas_familia, args.renda);
 
                     messages.push({
                         tool_call_id: toolCall.id,
