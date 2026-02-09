@@ -17,26 +17,35 @@ async function getCalendarClient() {
         try {
             console.log('🔑 Usando credenciais via variável de ambiente (GOOGLE_CREDENTIALS_JSON)...');
 
-            // Caso a env tenha sido salva com aspas extras acidentais no início/fim
             envJson = envJson.trim();
+            // Remover aspas extras que o usuário pode ter colado sem querer
             if (envJson.startsWith('"') && envJson.endsWith('"')) {
                 envJson = envJson.slice(1, -1);
             }
 
             const credentials = JSON.parse(envJson);
 
-            // Fix: Reemplazo robusto de saltos de línea
             if (credentials.private_key) {
-                // Remove literal \n and replace with real newlines, then trim
-                credentials.private_key = credentials.private_key
-                    .replace(/\\n/g, '\n')
-                    .replace(/\n\s+/g, '\n'); // remove extra spaces after newlines
+                // Limpeza agressiva da chave privada
+                let key = credentials.private_key;
 
-                if (!credentials.private_key.includes('BEGIN PRIVATE KEY')) {
-                    console.error('❌ Chave privada parece estar mal formatada (falta BEGIN/END header)');
-                } else {
-                    console.log('✅ Formato do header da chave validado.');
+                // 1. Converter literais "\n" (texto) em quebras de linha reais
+                key = key.replace(/\\n/g, '\n');
+
+                // 2. Remover espaços em branco acidentais no início de cada linha (comum em copy-paste)
+                key = key.split('\n').map(line => line.trim()).join('\n');
+
+                // 3. Garantir que começa e termina exatamente onde deve
+                if (!key.includes('BEGIN PRIVATE KEY')) {
+                    key = `-----BEGIN PRIVATE KEY-----\n${key}`;
                 }
+                if (!key.includes('END PRIVATE KEY')) {
+                    key = `${key}\n-----END PRIVATE KEY-----`;
+                }
+
+                credentials.private_key = key.trim();
+
+                console.log('✅ Chave privada limpa e formatada.');
             }
 
             const auth = new google.auth.GoogleAuth({
@@ -45,10 +54,10 @@ async function getCalendarClient() {
             });
 
             calendarClient = google.calendar({ version: 'v3', auth });
-            console.log('✅ Cliente Google Calendar inicializado (autenticação será validada na primeira chamada).');
+            console.log('✅ Cliente Google Calendar inicializado.');
             return calendarClient;
         } catch (error) {
-            console.error('❌ Erro ao ler GOOGLE_CREDENTIALS_JSON:', error.message);
+            console.error('❌ Erro crítico ao processar GOOGLE_CREDENTIALS_JSON:', error.message);
         }
     }
 
