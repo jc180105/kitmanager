@@ -388,6 +388,12 @@ async function agendarVisita(telefone, dataHorario) {
  */
 async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback = null, notifyAdminCallback = null, pushName = '') {
     try {
+        // COMANDO DE RESET
+        if (mensagemUsuario.toLowerCase().trim() === '/reset') {
+            await pool.query('DELETE FROM whatsapp_messages WHERE telefone = $1', [telefoneUsuario]);
+            return '🧹 Histórico de conversa limpo com sucesso! Minha memória sobre você foi apagada.';
+        }
+
         const lead = await getLeadByPhone(telefoneUsuario);
         let nomeUsuario = lead ? lead.nome : (pushName || 'Desconhecido');
 
