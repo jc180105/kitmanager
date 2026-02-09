@@ -16,6 +16,13 @@ async function getCalendarClient() {
         try {
             console.log('🔑 Usando credenciais via variável de ambiente (GOOGLE_CREDENTIALS_JSON)...');
             const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+
+            // Fix: Ensure private_key has real newlines instead of string literals "\n"
+            // This is a common issue when pasting JSON into Environment Variables
+            if (credentials.private_key) {
+                credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+            }
+
             const auth = new google.auth.GoogleAuth({
                 credentials,
                 scopes: SCOPES,
