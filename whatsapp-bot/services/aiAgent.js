@@ -77,10 +77,7 @@ const tools = [
             parameters: {
                 type: "object",
                 properties: {
-                    data_horario: {
-                        type: "string",
-                        description: "Data e hora da visita (formato ISO ou legível, ex: '2023-10-27 14:00' ou 'amanhã as 14h'). A IA deve tentar normalizar para algo compreensível."
-                    }
+                    description: "Data e hora da visita. Use preferencialmente o formato ISO 8601 (Ex: 2026-02-10T14:00:00). A IA deve converter termos como 'amanhã' para a data real baseada na 'Data Atual'."
                 },
                 required: ["data_horario"]
             }
@@ -96,7 +93,7 @@ const tools = [
                 properties: {
                     data: {
                         type: "string",
-                        description: "Data para consulta (formato YYYY-MM-DD, ex: '2023-10-27' ou 'amanhã'). A IA deve converter datas relativas como 'amanhã' para a data real baseada na 'Data Atual' do sistema."
+                        description: "Data para consulta (formato YYYY-MM-DD, ex: '2026-02-10' ou 'amanhã')."
                     }
                 },
                 required: ["data"]
@@ -355,27 +352,25 @@ async function registrarLead(nome, telefone, kitnetInteresse = null, pessoasFami
  */
 async function agendarVisita(telefone, dataHorario) {
     try {
-        console.log(`📅 Agendando visita para ${telefone} em ${dataHorario}`);
+        console.log(`📅 Iniciando processo de agendamento: ${telefone} em ${dataHorario}`);
 
-        // Simples inserção para MVP. Ideal seria validar colisão de horários.
-        // A IA já deve enviar uma string de data mais ou menos formatada.
-        // Se o banco falhar por formato inválido, a IA vai receber erro e pedir de novo.
-        // Convertendo para timestamp do Postgres
-        // Tenta criar um objeto Date
-        // Se falhar o insert vai dar erro e pegamos no catch
+        // 1. Tentar normalizar a data para o PostgreSQL
+        const dateObj = new Date(dataHorario);
+        if (isNaN(dateObj.getTime())) {
+            throw new Error('Formato de data inválido para agendamento.');
+        }
+        const timestampIso = dateObj.toISOString();
 
-        // Normalização básica de data
-        // Vamos confiar que o PostgreSQL aceite formatos flexíveis ou que a OpenAI formate bem
-        // O ideal é a OpenAI enviar ISO 8601
-
+        // 2. Salvar localmente
         await pool.query(`
             INSERT INTO visitas (telefone, data_visita)
-            VALUES ($1, $2::timestamp)
-        `, [telefone, dataHorario]); // $2::timestamp tenta forçar cast
+            VALUES ($1, $2)
+        `, [telefone, timestampIso]);
 
-        return true;
+        console.log(`✅ Visita salva no banco local.`);
+        return timestampIso; // Retorna para uso no Calendar
     } catch (error) {
-        console.error('Erro ao agendar visita:', error);
+        console.error('❌ Erro no agendarVisita (DB):', error.message);
         return false;
     }
 }
@@ -492,8 +487,24 @@ ${listaKitnets}
                     messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: slots.length > 0 ? slots.join(', ') : "Sem horários." });
                 }
                 else if (name === 'schedule_visit') {
-                    const agendado = await agendarVisita(telefoneUsuario, args.data_horario);
-                    messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: agendado ? "Agendado." : "Erro." });
+                    console.log(`🔨 Tool Call: schedule_visit para ${args.data_horario}`);
+                    const isoDate = await agendarVisita(telefoneUsuario, args.data_horario);
+
+                    if (isoDate) {
+                        // Restaurar Sincronia Google Calendar
+                        const calendarLink = await createCalendarEvent(telefoneUsuario, isoDate);
+
+                        // Notificar Admin
+                        if (notifyAdminCallback) {
+                            const leadInfo = await getLeadByPhone(telefoneUsuario);
+                            const msgAdmin = `📅 *NOVA VISITA AGENDADA!*\n👤 *Cliente:* ${nomeUsuario}\n📱 *Telefone:* ${telefoneUsuario}\n⏰ *Quando:* ${new Date(isoDate).toLocaleString('pt-BR')}\n👥 *Pessoas:* ${leadInfo?.pessoas_familia || 'Não inf.'}\n💰 *Renda:* ${leadInfo?.renda || 'Não inf.'}\n🔗 ${calendarLink || 'N/A'}`;
+                            await notifyAdminCallback(msgAdmin);
+                        }
+
+                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: calendarLink ? `Sucesso! Evento criado: ${calendarLink}` : "Agendado no banco, mas falha ao criar evento no calendário." });
+                    } else {
+                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Erro ao agendar visita no sistema. Verifique o formato da data." });
+                    }
                 }
             }
 
