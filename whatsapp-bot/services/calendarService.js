@@ -79,4 +79,44 @@ async function createCalendarEvent(telefone, dataHorario) {
     }
 }
 
-module.exports = { createCalendarEvent };
+/**
+ * Verifica se o horário está livre
+ * @param {string} dataHorario - Data ISO ou compatível
+ * @returns {Promise<boolean>} - true se livre, false se ocupado
+ */
+async function checkAvailability(dataHorario) {
+    const calendar = await getCalendarClient();
+    if (!calendar) return true; // Se falhar auth, assume livre para não travar (ou false para bloquear)
+
+    const startDate = new Date(dataHorario);
+    if (isNaN(startDate.getTime())) return false;
+
+    // Verificar intervalo de 30 min
+    const endDate = new Date(startDate.getTime() + 30 * 60000);
+
+    try {
+        const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
+
+        // Listar eventos que colidem
+        const response = await calendar.events.list({
+            calendarId: calendarId,
+            timeMin: startDate.toISOString(),
+            timeMax: endDate.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+        });
+
+        const events = response.data.items;
+        if (events && events.length > 0) {
+            console.log(`⚠️ Horário ocupado! Conflito com: ${events[0].summary}`);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Erro ao verificar disponibilidade:', error);
+        return true; // Fallback: permite agendar se der erro na API
+    }
+}
+
+module.exports = { createCalendarEvent, checkAvailability };

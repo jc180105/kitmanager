@@ -10,7 +10,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
 }) : null;
 
 // const { generateRulesPDF } = require('./pdfService'); // Removed in favor of text message
-const { createCalendarEvent } = require('./calendarService');
+const { createCalendarEvent, checkAvailability } = require('./calendarService');
 // const { isConnected, notifyAdmin } = require('./whatsapp'); // circular dependency removed
 
 // Definição das Ferramentas (Tools)
@@ -572,6 +572,20 @@ Agende sua visita aqui no chat!`;
                     const args = JSON.parse(toolCall.function.arguments);
 
                     try {
+                        // 1. Verificar disponibilidade no Google Calendar
+                        const isAvailable = await checkAvailability(args.data_horario);
+
+                        if (!isAvailable) {
+                            messages.push({
+                                tool_call_id: toolCall.id,
+                                role: "tool",
+                                name: "schedule_visit",
+                                content: "❌ Horário indisponível (conflito de agenda). Peça para o cliente escolher outro horário."
+                            });
+                            continue; // Pula para o próximo tool call ou encerra este
+                        }
+
+                        // 2. Se livre, prossegue com agendamento local
                         const agendado = await agendarVisita(telefoneUsuario, args.data_horario);
 
                         if (agendado) {
