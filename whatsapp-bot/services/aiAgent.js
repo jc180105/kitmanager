@@ -509,16 +509,17 @@ Se disser que tem animais: NEGUE educadamente (regras do condomínio).`;
                     const r = await getRules();
                     const kLivres = await getKitnetsDisponiveis();
 
-                    // Se houver kitnets livres, listar uma a uma. Se não, usar o base_price.
-                    let aluguelTexto = `R$ ${r.base_price}`;
+                    // Se houver kitnets livres, usa o preço da primeira encontrada como base. 
+                    // Se não houver, cai no base_price das rules.
+                    let valorAluguel = r.base_price;
                     if (kLivres.length > 0) {
-                        aluguelTexto = kLivres.map(k => `Kitnet ${k.numero}: R$ ${Number(k.valor).toFixed(2)}`).join('\n💰 ');
+                        valorAluguel = Number(kLivres[0].valor).toFixed(2);
                     }
 
                     const folderText = `📄 *VALORES E REGRAS - KITNETS PRAIA DE FORA* 📄
 
 📍 *Endereço:* R. Porto Reis, 125 - Praia de Fora, Palhoça
-💰 *Aluguel:* ${aluguelTexto} / mês
+💰 *Aluguel:* R$ ${valorAluguel} / mês
 ✅ *Incluso:* Água e Luz
 🚫 *Internet:* ${r.wifi_included}
 
