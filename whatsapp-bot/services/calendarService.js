@@ -11,22 +11,42 @@ let calendarClient = null;
 async function getCalendarClient() {
     if (calendarClient) return calendarClient;
 
+    // 1. Tentar Environment Variable (Produção no Railway)
+    if (process.env.GOOGLE_CREDENTIALS_JSON) {
+        try {
+            console.log('🔑 Usando credenciais via variável de ambiente (GOOGLE_CREDENTIALS_JSON)...');
+            const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+            const auth = new google.auth.GoogleAuth({
+                credentials,
+                scopes: SCOPES,
+            });
+
+            calendarClient = google.calendar({ version: 'v3', auth });
+            console.log('✅ Cliente Google Calendar autenticado via ENV.');
+            return calendarClient;
+        } catch (error) {
+            console.error('❌ Erro ao ler GOOGLE_CREDENTIALS_JSON:', error.message);
+        }
+    }
+
+    // 2. Tentar Arquivo Local (Desenvolvimento)
     if (!fs.existsSync(KEY_FILE_PATH)) {
-        console.error('❌ Arquivo google_credentials.json não encontrado na raiz do projeto.');
-        return null;
+        console.error('❌ Arquivo google_credentials.json não encontrado e variável de ambiente vazia.');
+        return null; // Retorna null em vez de crashar
     }
 
     try {
+        console.log('📁 Usando credenciais via arquivo local...');
         const auth = new google.auth.GoogleAuth({
             keyFile: KEY_FILE_PATH,
             scopes: SCOPES,
         });
 
         calendarClient = google.calendar({ version: 'v3', auth });
-        console.log('✅ Cliente Google Calendar autenticado.');
+        console.log('✅ Cliente Google Calendar autenticado via Arquivo.');
         return calendarClient;
     } catch (error) {
-        console.error('❌ Erro ao autenticar no Google Calendar:', error);
+        console.error('❌ Erro ao autenticar no Google Calendar via arquivo:', error);
         return null;
     }
 }
