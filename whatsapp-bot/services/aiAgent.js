@@ -401,7 +401,8 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
         
 📍 DADOS DO SISTEMA:
 - Data Atual: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
-- Unidades livres: ${kitnetsLivres.length > 0 ? 'SIM' : 'NÃO'}
+- Unidades livres agora:
+${kitnetsLivres.length > 0 ? kitnetsLivres.map(k => `  • Unidade ${k.numero}: R$ ${Number(k.valor).toFixed(2)} (${k.descricao || 'Sem descrição'})`).join('\n') : '  • NENHUMA DISPONÍVEL'}
 - Cliente atual: ${nomeUsuario} (${telefoneUsuario})
 - Endereço: R. Porto Reis, 125 - Praia de Fora, Palhoça (https://maps.app.goo.gl/wYwVUsGdTAFPSoS79)
 
@@ -504,14 +505,21 @@ Se disser que tem animais: NEGUE educadamente (regras do condomínio).`;
                 } else if (toolCall.function.name === 'send_rules_text') {
                     console.log(`🔨 Tool Call: send_rules_text`);
 
-                    // Re-fetch rules just to be sure (or use the variable from above)
+                    // Re-buscar para ter os dados mais frescos das kitnets
                     const r = await getRules();
+                    const kLivres = await getKitnetsDisponiveis();
+
+                    // Se houver kitnets livres, listar uma a uma. Se não, usar o base_price.
+                    let aluguelTexto = `R$ ${r.base_price}`;
+                    if (kLivres.length > 0) {
+                        aluguelTexto = kLivres.map(k => `Kitnet ${k.numero}: R$ ${Number(k.valor).toFixed(2)}`).join('\n💰 ');
+                    }
 
                     const folderText = `📄 *VALORES E REGRAS - KITNETS PRAIA DE FORA* 📄
 
 📍 *Endereço:* R. Porto Reis, 125 - Praia de Fora, Palhoça
-💰 *Aluguel:* R$ ${r.base_price} / mês
-✅ *Incluso:* Água (${r.water_included}) e Luz (${r.light_included})
+💰 *Aluguel:* ${aluguelTexto} / mês
+✅ *Incluso:* Água e Luz
 🚫 *Internet:* ${r.wifi_included}
 
 🛏️ *Mobília:* ${r.furniture_rules}
@@ -521,7 +529,7 @@ Se disser que tem animais: NEGUE educadamente (regras do condomínio).`;
 🐕 *Pets:* ${r.pet_rules}
 
 📝 *Contrato:* Tempo mínimo ${r.contract_months} meses
-💵 *Caução:* R$ ${r.deposit_value} (1º mês)
+💵 *Caução:* R$ ${r.deposit_value}
 
 🕙 *Visitas:* Seg-Sex das 10h às 17h
 Agende sua visita aqui no chat!`;
