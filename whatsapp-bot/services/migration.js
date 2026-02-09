@@ -40,7 +40,7 @@ async function runMigrations() {
             { key: 'light_included', value: 'Sim' },
             { key: 'garage_rules', value: 'Apenas MOTO (não tem carro)' },
             { key: 'pet_rules', value: 'Não aceitamos animais' },
-            { key: 'capacity_rules', value: 'Máximo 2 pessoas (Ideal 1). Sem crianças.' },
+            { key: 'capacity_rules', value: 'Máximo 2 pessoas. Sem crianças.' },
             { key: 'furniture_rules', value: '100% mobiliadas (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)' },
             { key: 'laundry_rules', value: 'Espaço e conexão para máquina na própria kitnet' }
         ];

@@ -235,7 +235,7 @@ async function getRules() {
             light_included: 'Sim',
             garage_rules: 'Apenas Moto',
             pet_rules: 'Não aceita pets',
-            capacity_rules: 'Max 2 pessoas',
+            capacity_rules: 'Máximo 2 pessoas. Sem crianças.',
             furniture_rules: 'Mobiliada',
             laundry_rules: 'Com lavanderia'
         };
