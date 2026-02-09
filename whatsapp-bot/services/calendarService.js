@@ -210,4 +210,62 @@ async function testConnection() {
     }
 }
 
-module.exports = { createCalendarEvent, checkAvailability, testConnection };
+/**
+ * Lista todos os horários livres para um determinado dia
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {Promise<string[]>} - Lista de horários livres (ex: ['10:00', '11:00'])
+ */
+async function getFreeSlotsForDay(dateStr) {
+    const calendar = await getCalendarClient();
+    if (!calendar) return [];
+
+    try {
+        const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
+
+        // Definir início e fim do dia comercial (10h as 17h)
+        const startOfDay = new Date(`${dateStr}T10:00:00-03:00`);
+        const endOfDay = new Date(`${dateStr}T17:00:00-03:00`);
+
+        if (isNaN(startOfDay.getTime())) return [];
+
+        // Buscar todos os eventos do dia
+        const response = await calendar.events.list({
+            calendarId: calendarId,
+            timeMin: startOfDay.toISOString(),
+            timeMax: endOfDay.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+        });
+
+        const events = response.data.items || [];
+
+        // Horários que queremos oferecer (padrão do usuário no print)
+        const checkSlots = ['10:00', '11:00', '14:00', '15:00', '16:00'];
+        const freeSlots = [];
+
+        for (const slot of checkSlots) {
+            const slotStart = new Date(`${dateStr}T${slot}:00-03:00`);
+            const slotEnd = new Date(slotStart.getTime() + 30 * 60000);
+
+            // Verificar se algum evento colide com este slot
+            const isBusy = events.some(event => {
+                const eventStart = new Date(event.start.dateTime || event.start.date);
+                const eventEnd = new Date(event.end.dateTime || event.end.date);
+
+                // Sobreposição: (StartA < EndB) e (EndA > StartB)
+                return (slotStart < eventEnd && slotEnd > eventStart);
+            });
+
+            if (!isBusy) {
+                freeSlots.push(slot);
+            }
+        }
+
+        return freeSlots;
+    } catch (error) {
+        console.error('Erro ao buscar slots livres:', error);
+        return [];
+    }
+}
+
+module.exports = { createCalendarEvent, checkAvailability, getFreeSlotsForDay, testConnection };

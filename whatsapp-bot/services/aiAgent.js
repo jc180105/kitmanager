@@ -10,7 +10,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
 }) : null;
 
 // const { generateRulesPDF } = require('./pdfService'); // Removed in favor of text message
-const { createCalendarEvent, checkAvailability } = require('./calendarService');
+const { createCalendarEvent, checkAvailability, getFreeSlotsForDay } = require('./calendarService');
 // const { isConnected, notifyAdmin } = require('./whatsapp'); // circular dependency removed
 
 // Definição das Ferramentas (Tools)
@@ -85,7 +85,24 @@ const tools = [
                 required: ["data_horario"]
             }
         }
-    }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_free_slots",
+            description: "Consulta quais horários estão livres no Google Calendar para uma data específica. Use isso SEMPRE que o cliente perguntar 'quais horários tem' ou mencionar um dia para visita.",
+            parameters: {
+                type: "object",
+                properties: {
+                    data: {
+                        type: "string",
+                        description: "Data para consulta (formato YYYY-MM-DD, ex: '2023-10-27' ou 'amanhã'). A IA deve converter datas relativas como 'amanhã' para a data real baseada na 'Data Atual' do sistema."
+                    }
+                },
+                required: ["data"]
+            }
+        }
+    },
 
     ,
     {
@@ -408,44 +425,25 @@ ${kitnetsLivres.length > 0 ? kitnetsLivres.map(k => `  • Unidade ${k.numero}: 
 
 🤖 SUAS INSTRUÇÕES:
 1. Seu objetivo é tirar dúvidas e **REGISTRAR O INTERESSE** do cliente.
-2. **PROATIVIDADE (IMPORTANTE):** Logo no início da conversa (após o 'Olá'), se o cliente ainda não viu, ofereça:
+2. **PROATIVIDADE (Início):** Logo no início da conversa (após o 'Olá'), se o cliente ainda não viu, ofereça:
    - "Gostaria que eu te mandasse um **vídeo tour** da kitnet e a **lista de valores e regras** por escrito?"
-   - Se ele disser "sim", "pode mandar", "quero", use as tools \`send_tour_video\` e \`send_rules_text\`.
-3. Use a ferramenta \`register_lead\` quando o cliente disser o nome ou demonstrar interesse em visitar.
-4. Se o nome for 'Desconhecido', tente descobrir naturalmente.
-   - SE o nome parecer um apelido ou emoji (ex: "Bebê", "👑"), PERGUNTE o nome real.
-   - Mesmo que já tenha o nome do perfil, confirme: "A propósito, seu nome é ${nomeUsuario} mesmo ou prefere ser chamado de outra forma?" antes de agendar.
-5. Não invente kitnets. Se não tem livres, diga que não tem.
-6. Seja curto, amigável e use emojis 🏠.
-7. **NUNCA USE A PALAVRA 'FOLDER'**. Use "lista de regras", "valores por escrito", etc.
-8. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização.
-9. **AGENDAMENTO:** Se o cliente quiser visitar, pergunte data e hora. Use 'schedule_visit'.
+   - Se ele disser "sim", use as tools 'send_tour_video' e 'send_rules_text'.
+3. Use a ferramenta `register_lead` quando o cliente disser o nome ou fornecer as infos de qualificação (pessoas/renda).
+4. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização e Maps.
+5. **FLUXO DE AGENDAMENTO (RIGOROSO):**
+   - Se o cliente quiser visitar, você DEVE obter 2 informações antes: **Quantas pessoas?** e **Qual o trabalho?**.
+   - Se ele responder isso (ou já tiver falado no início), REGISTRE com `register_lead`.
+   - **ASSIM QUE ELE RESPONDER ESTAS DUAS INFOS**, se ele já falou o dia, use IMEDIATAMENTE a tool 'get_free_slots' para esse dia.
+   - Se ele NÃO falou o dia, peça o dia. Assim que ele der o dia, use 'get_free_slots'.
+   - **NUNCA** mostre uma lista genérica de horários. Mostre APENAS os horários que a tool 'get_free_slots' retornar como livres.
+   - Se a tool retornar vazio, diga que o dia está lotado e ofereça outro.
+   - Após o cliente escolher um dos horários confirmados como livres, use 'schedule_visit'.
 
-📋 REGRAS E VALORES (Do Banco de Dados):
-- **Aluguel:** R$ ${rules.base_price}/mês
-- **Caução:** R$ ${rules.deposit_value} (primeiro mês)
-- **Contrato:** Tempo mínimo de ${rules.contract_months} meses
-- **Incluso:** Água (${rules.water_included}) e Luz (${rules.light_included})
-- **Internet:** ${rules.wifi_included}
-- **Mobília:** ${rules.furniture_rules}
-- **Garagem:** ${rules.garage_rules}
-- **Pets:** ${rules.pet_rules}
-- **Capacidade:** ${rules.capacity_rules}
-- **Lavanderia:** ${rules.laundry_rules}
-- **Documentos:** Necessário RG, CPF e Comp. Renda.
-- Visitas: Seg-Sex das 10h às 17h. 🕙
-
-IMPORTANTÍSSIMO - QUALIFICAÇÃO DE LEADS (FILTRO):
-Antes de agendar visita ou passar contato, você DEVE obter estas 2 informações:
-1. Quantas pessoas vão morar?
-2. Qual a renda/trabalho?
-
-Se o cliente perguntar de visita, diga: "Claro! Antes de agendarmos, me tira duas dúvidas rapidinho para eu verificar se o perfil se encaixa nas regras do condomínio:
-1. Quantas pessoas morariam no imóvel?
-2. Com o que você trabalha atualmente?"
-
-NÃO agende se ele não responder.
-Se disser que tem animais: NEGUE educadamente (regras do condomínio).`;
+6. Se o nome parecer um apelido ou emoji, PERGUNTE o nome real antes de agendar.
+7. Não invente kitnets. Se não tem livres, diga que não tem.
+8. Seja curto, amigável e use emojis 🏠.
+9. **NUNCA USE A PALAVRA 'FOLDER'**. Use "lista de regras", "valores por escrito", etc.
+`;
 
         // Chamar OpenAI
         if (!openai) {
@@ -644,6 +642,31 @@ Agende sua visita aqui no chat!`;
                             role: "tool",
                             name: "schedule_visit",
                             content: "Erro técnico ao agendar visita."
+                        });
+                    }
+
+                } else if (toolCall.function.name === 'get_free_slots') {
+                    console.log(`🔨 Tool Call: get_free_slots`);
+                    const args = JSON.parse(toolCall.function.arguments);
+
+                    try {
+                        const slotsLibres = await getFreeSlotsForDay(args.data);
+
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: "get_free_slots",
+                            content: slotsLibres.length > 0
+                                ? `Horários disponíveis para ${args.data}: ${slotsLibres.join(', ')}. Mostre estes horários para o cliente.`
+                                : `Não há horários disponíveis para ${args.data}. Sugira outro dia.`
+                        });
+                    } catch (error) {
+                        console.error('Erro ao buscar slots livres:', error);
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: "get_free_slots",
+                            content: "Erro técnico ao consultar agenda."
                         });
                     }
 
