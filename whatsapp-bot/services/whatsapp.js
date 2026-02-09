@@ -237,13 +237,28 @@ function getQR() {
 
 async function notifyAdmin(texto) {
     // Admin defined by user: 48 9 8843 8860
-    // Baileys format: 5548988438860@s.whatsapp.net
+    // Try both formats (with and without 9) because WhatsApp JIDs are inconsistent in Brazil
     const adminPhone = process.env.ADMIN_PHONE || '5548988438860';
+
+    // Format 1: As provided (usually with 9)
+    const jid1 = `${adminPhone}@s.whatsapp.net`;
+
+    // Format 2: Remove 9 if it looks like a BR number with 9 digits (55 + DDD + 9 + 8 digits)
+    const jid2 = adminPhone.replace(/^55(\d{2})9(\d{8})$/, '55$1$2') + '@s.whatsapp.net';
+
     try {
         if (sock) {
-            const jid = `${adminPhone}@s.whatsapp.net`;
-            await sock.sendMessage(jid, { text: `🔔 *ALERTA DO BOT* 🔔\n\n${texto}` });
-            console.log(`🔔 Notificação enviada para admin (${adminPhone})`);
+            console.log(`🔔 Tentando notificar admin em: ${jid1} e ${jid2}`);
+
+            // Send to first format
+            await sock.sendMessage(jid1, { text: `🔔 *ALERTA DO BOT* 🔔\n\n${texto}` });
+
+            // Send to second format if different
+            if (jid1 !== jid2) {
+                await sock.sendMessage(jid2, { text: `🔔 *ALERTA DO BOT (Backup)* 🔔\n\n${texto}` });
+            }
+
+            console.log(`✅ Notificação enviada!`);
         } else {
             console.log('❌ Falha ao notificar admin: WhatsApp desconectado');
         }
