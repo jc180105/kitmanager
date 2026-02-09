@@ -80,7 +80,10 @@ const tools = [
             parameters: {
                 type: "object",
                 properties: {
-                    description: "Data e hora da visita. Use preferencialmente o formato ISO 8601 (Ex: 2026-02-10T14:00:00). A IA deve converter termos como 'amanhã' para a data real baseada na 'Data Atual'."
+                    data_horario: {
+                        type: "string",
+                        description: "Data e hora da visita. Use preferencialmente o formato ISO 8601 (Ex: 2026-02-10T14:00:00). A IA deve converter termos como 'amanhã' para a data real baseada na 'Data Atual'."
+                    }
                 },
                 required: ["data_horario"]
             }
