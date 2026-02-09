@@ -17,7 +17,44 @@ async function runMigrations() {
         }
         console.log('✅ Migrações concluídas.');
     } catch (error) {
-        console.error('❌ Erro ao rodar migrações:', error);
+        console.error('❌ Erro na migração de telefone:', error);
+    }
+
+    try {
+        // Migration 2: Create rules table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS rules (
+                chave VARCHAR(50) PRIMARY KEY,
+                valor TEXT
+            )
+        `);
+        console.log('✅ Tabela rules verificada.');
+
+        // Insert default values if not exists
+        const defaultRules = [
+            { key: 'base_price', value: '500.00' },
+            { key: 'deposit_value', value: '450.00' },
+            { key: 'contract_months', value: '6' },
+            { key: 'wifi_included', value: 'Não (contratar à parte)' },
+            { key: 'water_included', value: 'Sim' },
+            { key: 'light_included', value: 'Sim' },
+            { key: 'garage_rules', value: 'Apenas MOTO (não tem carro)' },
+            { key: 'pet_rules', value: 'Não aceitamos animais' },
+            { key: 'capacity_rules', value: 'Máximo 2 pessoas (Ideal 1). Sem crianças.' },
+            { key: 'furniture_rules', value: '100% mobiliadas (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)' },
+            { key: 'laundry_rules', value: 'Espaço e conexão para máquina na própria kitnet' }
+        ];
+
+        for (const rule of defaultRules) {
+            await pool.query(`
+                INSERT INTO rules (chave, valor) VALUES ($1, $2)
+                ON CONFLICT (chave) DO NOTHING
+            `, [rule.key, rule.value]);
+        }
+        console.log('✅ Regras padrão verificadas/inseridas.');
+
+    } catch (error) {
+        console.error('❌ Erro na migração de rules:', error);
     }
 }
 

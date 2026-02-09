@@ -48,8 +48,8 @@ const tools = [
     {
         type: "function",
         function: {
-            name: "send_info_folder",
-            description: "Envia um folder/PDF bonito com todas as regras, preços e detalhes das kitnets. Use quando o cliente pedir 'mais informações', 'folder', 'arquivo' ou 'regras por escrito'.",
+            name: "send_rules_text",
+            description: "Envia o texto com todas as regras, valores e detalhes atualizados. Use proativamente no início da conversa ou quando o cliente pedir 'valores', 'regras', 'como funciona'.",
             parameters: {
                 type: "object",
                 properties: {},
@@ -207,6 +207,50 @@ async function saveMessage(telefone, role, content) {
 }
 
 /**
+ * Busca regras dinâmicas do banco
+ */
+async function getRules() {
+    try {
+        const result = await pool.query('SELECT chave, valor FROM rules');
+        const rules = {};
+        // Convert array to object { key: value }
+        result.rows.forEach(row => {
+            rules[row.chave] = row.valor;
+        });
+
+        // Default fallbacks if db is empty
+        return {
+            base_price: rules.base_price || '500.00',
+            deposit_value: rules.deposit_value || '450.00',
+            contract_months: rules.contract_months || '6',
+            wifi_included: rules.wifi_included || 'Não (contratar à parte)',
+            water_included: rules.water_included || 'Sim',
+            light_included: rules.light_included || 'Sim',
+            garage_rules: rules.garage_rules || 'Apenas MOTO (não tem carro)',
+            pet_rules: rules.pet_rules || 'Não aceitamos animais',
+            capacity_rules: rules.capacity_rules || 'Máximo 2 pessoas (Ideal 1). Sem crianças.',
+            furniture_rules: rules.furniture_rules || '100% mobiliadas (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)',
+            laundry_rules: rules.laundry_rules || 'Espaço e conexão para máquina na própria kitnet'
+        };
+    } catch (error) {
+        console.error('Erro ao buscar regras:', error);
+        return {
+            base_price: '500.00',
+            deposit_value: '450.00',
+            contract_months: '6',
+            wifi_included: 'Não',
+            water_included: 'Sim',
+            light_included: 'Sim',
+            garage_rules: 'Apenas Moto',
+            pet_rules: 'Não aceita pets',
+            capacity_rules: 'Max 2 pessoas',
+            furniture_rules: 'Mobiliada',
+            laundry_rules: 'Com lavanderia'
+        };
+    }
+}
+
+/**
  * Busca kitnets disponíveis no banco de dados
  */
 async function getKitnetsDisponiveis() {
@@ -345,44 +389,48 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
         const precoReferencia = kitnetsLivres.length > 0 ? kitnetsLivres[0].valor : await getPrecoReferencia();
         const precoFormatado = Number(precoReferencia).toFixed(2);
 
+        // Buscar regras dinâmicas
+        const rules = await getRules();
+
         // Montar contexto para a IA
         let contexto = `Você é um assistente virtual de aluguel de kitnets.
         
 📍 DADOS DO SISTEMA:
 - Unidades livres: ${kitnetsLivres.length > 0 ? 'SIM' : 'NÃO'}
-- Preço base: R$ ${precoFormatado}/mês
 - Cliente atual: ${nomeUsuario} (${telefoneUsuario})
 - Endereço: R. Porto Reis, 125 - Praia de Fora, Palhoça (https://maps.app.goo.gl/wYwVUsGdTAFPSoS79)
 
 🤖 SUAS INSTRUÇÕES:
 1. Seu objetivo é tirar dúvidas e **REGISTRAR O INTERESSE** do cliente.
-2. **PRIORIDADE MÁXIMA:** Se o cliente pedir "folder", "pdf", "arquivo", "informações por escrito" ou "regras", USE A FERRAMENTA \`send_info_folder\` IMEDIATAMENTE. Não faça perguntas antes. Envie o folder e DEPOIS pergunte o nome ou continue a conversa.
+2. **PROATIVIDADE (IMPORTANTE):** Logo no início da conversa (após o 'Olá'), se o cliente ainda não viu, ofereça:
+   - "Gostaria que eu te mandasse um **vídeo tour** da kitnet e a **lista de valores e regras** por escrito?"
+   - Se ele disser "sim", "pode mandar", "quero", use as tools \`send_tour_video\` e \`send_rules_text\`.
 3. Use a ferramenta \`register_lead\` quando o cliente disser o nome ou demonstrar interesse em visitar.
-4. Se o nome for 'Desconhecido' e ele NÃO pediu folder/video, pergunte o nome.
+4. Se o nome for 'Desconhecido', tente descobrir naturalmente durante a conversa.
 5. Não invente kitnets. Se não tem livres, diga que não tem.
 6. Seja curto, amigável e use emojis 🏠.
-7. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização neste formato:
-   - *Localização:* R. Porto Reis, 125 - Praia de Fora, Palhoça
-   - *Google Maps:* https://maps.app.goo.gl/wYwVUsGdTAFPSoS79
-8. **AGENDAMENTO:** Se o cliente quiser visitar, pergunte data e hora. Use 'schedule_visit'.
+7. **NUNCA USE A PALAVRA 'FOLDER'**. Use "lista de regras", "valores por escrito", etc.
+8. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização.
+9. **AGENDAMENTO:** Se o cliente quiser visitar, pergunte data e hora. Use 'schedule_visit'.
 
-📋 REGRAS E DETALHES (CÉREBRO):
-- **Animais:** NÃO aceitamos pets/animais de estimação. 🚫🐶
-- **Custos:** Água e Luz inclusos. Internet NÃO inclusa (contratar à parte). 💧💡❌🌐
-- **Caução:** R$ 450,00 no primeiro mês. 💰
-- **Mobília:** Sim, mobiliadas. 🛏️
-- **Contrato:** Tempo mínimo de 6 meses. 📝
-- **Garagem:** NÃO tem vaga para carro. Apenas estacionamento para MOTO no terreno. 🏍️
-- **Lavanderia:** Tem espaço e conexão para máquina de lavar na própria kitnet. 🧺
-- **Capacidade:** Prioridade para 1 pessoa. Máximo de 2 pessoas. NÃO aceita crianças. 👤
-- **Silêncio:** Lei do silêncio após às 22h. 🤫
-- **Documentos:** Necessário RG, CPF e Comp. Renda (detalhes a combinar na visita). 📄
+📋 REGRAS E VALORES (Do Banco de Dados):
+- **Aluguel:** R$ ${rules.base_price}/mês
+- **Caução:** R$ ${rules.deposit_value} (primeiro mês)
+- **Contrato:** Tempo mínimo de ${rules.contract_months} meses
+- **Incluso:** Água (${rules.water_included}) e Luz (${rules.light_included})
+- **Internet:** ${rules.wifi_included}
+- **Mobília:** ${rules.furniture_rules}
+- **Garagem:** ${rules.garage_rules}
+- **Pets:** ${rules.pet_rules}
+- **Capacidade:** ${rules.capacity_rules}
+- **Lavanderia:** ${rules.laundry_rules}
+- **Documentos:** Necessário RG, CPF e Comp. Renda.
 - Visitas: Seg-Sex das 10h às 17h. 🕙
 
 IMPORTANTÍSSIMO - QUALIFICAÇÃO DE LEADS (FILTRO):
 Antes de agendar visita ou passar contato, você DEVE obter estas 2 informações:
-1. Quantas pessoas vão morar? (Ideal: 1 pessoa. Máx: 2. Sem crianças.)
-2. Qual a renda/trabalho? (Para garantir que consegue pagar).
+1. Quantas pessoas vão morar?
+2. Qual a renda/trabalho?
 
 Se o cliente perguntar de visita, diga: "Claro! Antes de agendarmos, me tira duas dúvidas rapidinho para eu verificar se o perfil se encaixa nas regras do condomínio:
 1. Quantas pessoas morariam no imóvel?
@@ -446,24 +494,27 @@ Se disser que tem animais: NEGUE educadamente (regras do condomínio).`;
                         name: "register_lead",
                         content: sucesso ? "Lead registrado com sucesso. Agradeça o cliente." : "Erro ao registrar lead."
                     });
-                } else if (toolCall.function.name === 'send_info_folder') {
-                    console.log(`🔨 Tool Call: send_info_folder`);
+                } else if (toolCall.function.name === 'send_rules_text') {
+                    console.log(`🔨 Tool Call: send_rules_text`);
 
-                    const folderText = `📄 *FOLDER DIGITAL - KITNETS PRAIA DE FORA* 📄
+                    // Re-fetch rules just to be sure (or use the variable from above)
+                    const r = await getRules();
+
+                    const folderText = `📄 *VALORES E REGRAS - KITNETS PRAIA DE FORA* 📄
 
 📍 *Endereço:* R. Porto Reis, 125 - Praia de Fora, Palhoça
-💰 *Aluguel:* R$ 500,00 / mês
-✅ *Incluso:* Água e Luz
-🚫 *Internet:* Não inclusa (contratar à parte)
+💰 *Aluguel:* R$ ${r.base_price} / mês
+✅ *Incluso:* Água (${r.water_included}) e Luz (${r.light_included})
+🚫 *Internet:* ${r.wifi_included}
 
-🛏️ *Mobília:* 100% mobiliadas (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)
-🏍️ *Garagem:* Apenas para MOTOS (não tem vaga de carro)
-🧺 *Lavanderia:* Espaço e conexão para máquina na própria kitnet
-👤 *Capacidade:* Máx. 2 pessoas (Ideal 1). Sem crianças.
-🐕 *Pets:* Não aceitamos animais.
+🛏️ *Mobília:* ${r.furniture_rules}
+🏍️ *Garagem:* ${r.garage_rules}
+🧺 *Lavanderia:* ${r.laundry_rules}
+👤 *Capacidade:* ${r.capacity_rules}
+🐕 *Pets:* ${r.pet_rules}
 
-📝 *Contrato:* Mínimo 6 meses
-💵 *Caução:* R$ 450,00 (1º mês)
+📝 *Contrato:* Tempo mínimo ${r.contract_months} meses
+💵 *Caução:* R$ ${r.deposit_value} (1º mês)
 
 🕙 *Visitas:* Seg-Sex das 10h às 17h
 Agende sua visita aqui no chat!`;
@@ -471,7 +522,7 @@ Agende sua visita aqui no chat!`;
                     messages.push({
                         tool_call_id: toolCall.id,
                         role: "tool",
-                        name: "send_info_folder",
+                        name: "send_rules_text",
                         content: folderText
                     });
                 } else if (toolCall.function.name === 'send_tour_video') {
