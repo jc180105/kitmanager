@@ -176,19 +176,37 @@ async function checkAvailability(dataHorario) {
  * @returns {Promise<{status: string, message?: string}>}
  */
 async function testConnection() {
-    const calendar = await getCalendarClient();
-    if (!calendar) return { status: 'error', message: 'Falha na autenticação (arquivo JSON ausente ou inválido)' };
-
     try {
+        const client = await getCalendarClient();
+        if (!client) return { status: 'error', message: 'Cliente não inicializado (falta .json ou ENV)' };
+
         const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
-        await calendar.events.list({
+
+        // Testar listando eventos
+        const response = await client.events.list({
             calendarId: calendarId,
+            timeMin: new Date().toISOString(),
             maxResults: 1,
-            singleEvents: true,
         });
-        return { status: 'ok' };
+
+        return {
+            status: 'ok',
+            calendarId: calendarId,
+            timezone: response.data.timeZone
+        };
     } catch (error) {
-        return { status: 'error', message: error.message };
+        console.error('❌ Erro no teste de conexão do Calendário:', error);
+
+        let message = error.message;
+        if (message.includes('DECODER routines::unsupported')) {
+            message = 'ERRO DE FORMATO NA CHAVE PRIVADA. Verifique se copiou o JSON completo e sem aspas extras no Railway.';
+        } else if (message.includes('invalid_grant')) {
+            message = 'ERRO DE AUTENTICAÇÃO. A conta de serviço pode estar desativada ou a chave expirou.';
+        } else if (message.includes('not found')) {
+            message = 'CALENDÁRIO NÃO ENCONTRADO. Verifique o GOOGLE_CALENDAR_ID.';
+        }
+
+        return { status: 'error', message: message, technical: error.code || error.message };
     }
 }
 
