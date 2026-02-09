@@ -384,10 +384,10 @@ async function agendarVisita(telefone, dataHorario) {
         `, [telefone, timestampIso]);
 
         console.log(`✅ Visita salva no banco local.`);
-        return timestampIso; // Retorna para uso no Calendar
+        return { success: true, date: timestampIso };
     } catch (error) {
         console.error('❌ Erro no agendarVisita (DB):', error.message);
-        return false;
+        return { success: false, error: error.message };
     }
 }
 
@@ -539,9 +539,10 @@ ${listaKitnets}
                 }
                 else if (name === 'schedule_visit') {
                     console.log(`🔨 Tool Call: schedule_visit para ${args.data_horario}`);
-                    const isoDate = await agendarVisita(telefoneUsuario, args.data_horario);
+                    const res = await agendarVisita(telefoneUsuario, args.data_horario);
 
-                    if (isoDate) {
+                    if (res.success) {
+                        const isoDate = res.date;
                         // Restaurar Sincronia Google Calendar
                         const calendarLink = await createCalendarEvent(telefoneUsuario, isoDate);
 
@@ -554,7 +555,7 @@ ${listaKitnets}
 
                         messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: calendarLink ? `Sucesso! Evento criado: ${calendarLink}` : "Agendado no banco, mas falha ao criar evento no calendário." });
                     } else {
-                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Erro ao agendar visita no banco de dados. Tente novamente ou verifique se a data está no futuro." });
+                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: `Erro ao agendar visita: ${res.error}` });
                     }
                 }
             }
