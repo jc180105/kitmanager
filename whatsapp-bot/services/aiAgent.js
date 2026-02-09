@@ -367,7 +367,17 @@ async function agendarVisita(telefone, dataHorario) {
         }
         const timestampIso = dateObj.toISOString();
 
-        // 2. Salvar localmente
+        // 2. Garantir que a tabela existe
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS visitas (
+                id SERIAL PRIMARY KEY,
+                telefone VARCHAR(60),
+                data_visita TIMESTAMP,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // 3. Salvar localmente
         await pool.query(`
             INSERT INTO visitas (telefone, data_visita)
             VALUES ($1, $2)
@@ -544,7 +554,7 @@ ${listaKitnets}
 
                         messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: calendarLink ? `Sucesso! Evento criado: ${calendarLink}` : "Agendado no banco, mas falha ao criar evento no calendário." });
                     } else {
-                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Erro ao agendar visita no sistema. Verifique o formato da data." });
+                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Erro ao agendar visita no banco de dados. Tente novamente ou verifique se a data está no futuro." });
                     }
                 }
             }
