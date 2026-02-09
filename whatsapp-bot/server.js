@@ -3,15 +3,18 @@ const express = require('express');
 const { initWhatsApp, isConnected, getQR } = require('./services/whatsapp');
 const { initCron } = require('./services/cronService');
 const { runMigrations } = require('./services/migration');
+const { testConnection } = require('./services/calendarService');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+    const calendarStatus = await testConnection();
     res.json({
         status: 'ok',
         whatsapp: isConnected() ? 'connected' : 'disconnected',
+        calendar: calendarStatus,
         timestamp: new Date().toISOString()
     });
 });

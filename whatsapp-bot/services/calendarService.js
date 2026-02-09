@@ -119,4 +119,25 @@ async function checkAvailability(dataHorario) {
     }
 }
 
-module.exports = { createCalendarEvent, checkAvailability };
+/**
+ * Testa a conexão com o Google Calendar
+ * @returns {Promise<{status: string, message?: string}>}
+ */
+async function testConnection() {
+    const calendar = await getCalendarClient();
+    if (!calendar) return { status: 'error', message: 'Falha na autenticação (arquivo JSON ausente ou inválido)' };
+
+    try {
+        const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
+        await calendar.events.list({
+            calendarId: calendarId,
+            maxResults: 1,
+            singleEvents: true,
+        });
+        return { status: 'ok' };
+    } catch (error) {
+        return { status: 'error', message: error.message };
+    }
+}
+
+module.exports = { createCalendarEvent, checkAvailability, testConnection };
