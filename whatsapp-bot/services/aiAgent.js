@@ -389,8 +389,7 @@ Se o cliente perguntar de visita, diga: "Claro! Antes de agendarmos, me tira dua
 2. Com o que você trabalha atualmente?"
 
 NÃO agende se ele não responder.
-Se disser que tem animais: NEGUE educadamente (regras do condomínio).
-Se disser "carro": Avise que NÃO tem vaga de carro (só moto).`;
+Se disser que tem animais: NEGUE educadamente (regras do condomínio).`;
 
         // Chamar OpenAI
         if (!openai) {
@@ -434,6 +433,12 @@ Se disser "carro": Avise que NÃO tem vaga de carro (só moto).`;
                     console.log(`🔨 Tool Call: register_lead`, args);
 
                     const sucesso = await registrarLead(args.nome, telefoneUsuario, null, args.pessoas_familia, args.renda);
+
+                    // FIX: Atualizar contexto IMEDIATAMENTE para a próxima geração não perguntar o nome de novo
+                    if (args.nome && args.nome !== 'Desconhecido') {
+                        contexto = contexto.replace(`Cliente atual: ${nomeUsuario}`, `Cliente atual: ${args.nome}`);
+                        messages[0].content = contexto; // Atualiza a mensagem de sistema no histórico local
+                    }
 
                     messages.push({
                         tool_call_id: toolCall.id,
