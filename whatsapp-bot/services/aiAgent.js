@@ -9,7 +9,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 }) : null;
 
-const { generateRulesPDF } = require('./pdfService');
+// const { generateRulesPDF } = require('./pdfService'); // Removed in favor of text message
 const { createCalendarEvent } = require('./calendarService');
 const { isConnected } = require('./whatsapp'); // Will need to export sendMedia from here too
 
@@ -410,40 +410,31 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
                 } else if (toolCall.function.name === 'send_info_folder') {
                     console.log(`🔨 Tool Call: send_info_folder`);
 
-                    try {
-                        // Generate PDF
-                        const pdfPath = await generateRulesPDF();
+                    const folderText = `📄 *FOLDER DIGITAL - KITNETS PRAIA DE FORA* 📄
 
-                        // Send PDF (Need to import sendMedia from whatsapp service or pass socket)
-                        // Temporarily, we will enhance the response to say we sent it, but actual sending needs socket access.
-                        // We need to refactor slightly to access socket or use a callback/event.
-                        // For now, let's assume valid PDF and return instruction to send it.
+📍 *Endereço:* R. Porto Reis, 125 - Praia de Fora, Palhoça
+💰 *Aluguel:* R$ 500,00 / mês
+✅ *Incluso:* Água e Luz
+🚫 *Internet:* Não inclusa (contratar à parte)
 
-                        // BETTER APPROACH: Return a special tag in content or handle sending here if we import 'sendMedia' (circular dep risk).
-                        // Let's use a global or require loop workaround, or just return the path to the main loop?
-                        // Actually, 'whatsapp.js' calls 'aiAgent.js', so we can't easily require 'whatsapp.js' here without circular dep.
-                        // Solution: Pass a 'sendMediaCallback' to 'gerarResposta'.
+🛏️ *Mobília:* 100% mobiliadas (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)
+🏍️ *Garagem:* Apenas para MOTOS (não tem vaga de carro)
+🧺 *Lavanderia:* Espaço e conexão para máquina na própria kitnet
+👤 *Capacidade:* Máx. 2 pessoas (Ideal 1). Sem crianças.
+🐕 *Pets:* Não aceitamos animais.
 
-                        // CHANGING PLAN: I'll modify 'gerarResposta' signature to accept a 'sendMediaCallback'
-                        if (sendMediaCallback) {
-                            await sendMediaCallback(telefoneUsuario, pdfPath, 'application/pdf', 'folder_kitnets.pdf', 'Aqui está o folder com todas as informações! 📄');
-                        }
+📝 *Contrato:* Mínimo 6 meses
+💵 *Caução:* R$ 450,00 (1º mês)
 
-                        messages.push({
-                            tool_call_id: toolCall.id,
-                            role: "tool",
-                            name: "send_info_folder",
-                            content: "Folder PDF gerado e enviado com sucesso."
-                        });
-                    } catch (error) {
-                        console.error('Erro ao gerar/enviar PDF:', error);
-                        messages.push({
-                            tool_call_id: toolCall.id,
-                            role: "tool",
-                            name: "send_info_folder",
-                            content: "Erro ao gerar o folder."
-                        });
-                    }
+🕙 *Visitas:* Seg-Sex das 10h às 17h
+Agende sua visita aqui no chat!`;
+
+                    messages.push({
+                        tool_call_id: toolCall.id,
+                        role: "tool",
+                        name: "send_info_folder",
+                        content: folderText
+                    });
                 } else if (toolCall.function.name === 'send_tour_video') {
                     console.log(`🔨 Tool Call: send_tour_video`);
 
@@ -455,8 +446,8 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
 
                         // Fallback if null in DB but file exists known
                         if (!videoPath) {
-                            // Hardcoded fallback for now if DB update failed or didn't propagate 
-                            videoPath = String.raw`c:\Users\pedro\OneDrive\Área de Trabalho\Agente Kitnets\fotos_e_videos\tour_video.mp4`;
+                            // Use relative path for Docker compatibility
+                            videoPath = path.join(__dirname, '../assets/tour_video.mp4');
                         }
 
                         if (sendMediaCallback && videoPath && fs.existsSync(videoPath)) {
