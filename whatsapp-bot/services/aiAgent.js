@@ -11,7 +11,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
 
 // const { generateRulesPDF } = require('./pdfService'); // Removed in favor of text message
 const { createCalendarEvent } = require('./calendarService');
-const { isConnected } = require('./whatsapp'); // Will need to export sendMedia from here too
+const { isConnected, notifyAdmin } = require('./whatsapp'); // Will need to export sendMedia from here too
 
 // Definição das Ferramentas (Tools)
 const tools = [
@@ -534,6 +534,12 @@ Agende sua visita aqui no chat!`;
                                 msgConfirmacao += ` (Salvo apenas localmente, erro na sincronização com Google Calendar - verifique logs).`;
                             }
 
+                            // Notificar Admin
+                            const lead = await getLeadByPhone(telefoneUsuario);
+                            const infoCliente = lead ? `${lead.nome} (${lead.pessoas_familia || '?'}, ${lead.renda || '?'})` : telefoneUsuario;
+                            notifyAdmin(`📅 *NOVA VISITA AGENDADA*\n\n👤 Cliente: ${infoCliente}\n📞 Telefone: ${telefoneUsuario}\n🗓️ Data: ${args.data_horario}`);
+
+
                             messages.push({
                                 tool_call_id: toolCall.id,
                                 role: "tool",
@@ -567,6 +573,8 @@ Agende sua visita aqui no chat!`;
 
                     // In a real scenario we would notify the admin here
                     console.log(`🚨 HUMAN HANDOFF REQUESTED FOR ${telefoneUsuario}`);
+
+                    notifyAdmin(`🚨 *SOLICITAÇÃO DE AJUDA HUMANA*\n\nO cliente ${telefoneUsuario} pediu para falar com um atendente.\nVerifique o chat!`);
 
                     messages.push({
                         tool_call_id: toolCall.id,

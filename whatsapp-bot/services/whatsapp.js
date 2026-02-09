@@ -235,4 +235,21 @@ function getQR() {
     return currentQR;
 }
 
-module.exports = { initWhatsApp, enviarMensagem, isConnected, stopWhatsApp, getQR };
+async function notifyAdmin(texto) {
+    // Admin defined by user: 48 9 8843 8860
+    // Baileys format: 5548988438860@s.whatsapp.net
+    const adminPhone = process.env.ADMIN_PHONE || '5548988438860';
+    try {
+        if (sock) {
+            const jid = `${adminPhone}@s.whatsapp.net`;
+            await sock.sendMessage(jid, { text: `🔔 *ALERTA DO BOT* 🔔\n\n${texto}` });
+            console.log(`🔔 Notificação enviada para admin (${adminPhone})`);
+        } else {
+            console.log('❌ Falha ao notificar admin: WhatsApp desconectado');
+        }
+    } catch (error) {
+        console.error('Erro ao notificar admin:', error);
+    }
+}
+
+module.exports = { initWhatsApp, enviarMensagem, isConnected, stopWhatsApp, getQR, notifyAdmin };
