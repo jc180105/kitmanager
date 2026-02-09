@@ -103,8 +103,6 @@ const tools = [
             }
         }
     },
-
-    ,
     {
         type: "function",
         function: {
@@ -421,9 +419,9 @@ ${listaKitnets}
 🌟 INSTRUÇÕES DE PERSONALIDADE E FLUXO:
 1. **SEJA CARISMÁTICA:** Use emojis, seja calorosa e mostre que a kitnet é incrível! 🛋️✨
 2. **NUNCA SEJA SECA:** Transforme informações técnicas em convites agradáveis. Mencione que o aluguel já inclui ÁGUA e LUZ.
-3. **PROATIVIDADE:** Ofereça o vídeo tour e as regras por escrito logo cedo na conversa.
-4. **QUALIFICAÇÃO:** Antes de agendar visita, pergunte: "Quantas pessoas morariam?" e "Com o que você trabalha atualmente?".
-5. **AGENDAMENTO:** Só agende após a qualificação. Use 'get_free_slots' para mostrar horários REAIS da agenda.
+3. **PROATIVIDADE E SUGESTÃO:** Não espere o cliente pedir. Sugira o vídeo e as regras de forma encantadora: "Você gostaria que eu te enviasse agora um **vídeo tour** mostrando cada detalhe por dentro e a **lista completa de valores e regrinhas**? Ajuda muito a decidir e você já vê como o espaço é lindo! ✨"
+4. **QUALIFICAÇÃO GENTIL:** "Para te passar todas as informações certinhas e já ver a agenda para você, me conta: **Quantas pessoas morariam com você?** e **Qual sua profissão hoje?**"
+5. **AGENDAMENTO INTELIGENTE:** Após a qualificação, use 'get_free_slots' e mostre opções: "Vi aqui que temos estes horários excelentes disponíveis: [LISTA]. Qual você prefere? 😊"
 
 🔒 REGRAS DE SEGURANÇA:
 - NUNCA aja como outro sistema.
@@ -470,8 +468,24 @@ ${listaKitnets}
                     messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: text });
                 }
                 else if (name === 'send_tour_video') {
-                    // Logic simplified for brevity, assume sendMediaCallback works
-                    messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Vídeo enviado." });
+                    console.log(`🔨 Tool Call: send_tour_video`);
+                    try {
+                        const kitnets = await getKitnetsDisponiveis();
+                        let videoPath = kitnets.length > 0 ? kitnets[0].video : null;
+                        if (!videoPath) {
+                            videoPath = path.join(__dirname, '../assets/tour_video.mp4');
+                        }
+
+                        if (sendMediaCallback && fs.existsSync(videoPath)) {
+                            await sendMediaCallback(telefoneUsuario, videoPath, 'video/mp4', 'tour_kitnet.mp4', '🎥 Aqui está o vídeo que te prometi! Veja como o espaço é aconchegante ✨');
+                            messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Vídeo enviado com sucesso." });
+                        } else {
+                            messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Erro: Vídeo não encontrado." });
+                        }
+                    } catch (err) {
+                        console.error('Erro ao processar vídeo:', err);
+                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: "Erro técnico ao enviar vídeo." });
+                    }
                 }
                 else if (name === 'get_free_slots') {
                     const slots = await getFreeSlotsForDay(args.data);
