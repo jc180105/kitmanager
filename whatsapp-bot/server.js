@@ -8,6 +8,11 @@ const { testConnection } = require('./services/calendarService');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Basic landing page to avoid Railway "Not Found"
+app.get('/', (req, res) => {
+    res.send('<h1>🤖 WhatsApp Bot is Running!</h1><p>Check <a href="/health">/health</a> for status or <a href="/qr">/qr</a> for connection.</p>');
+});
+
 // Health check endpoint
 app.get('/health', async (req, res) => {
     const calendarStatus = await testConnection();
