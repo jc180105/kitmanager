@@ -545,16 +545,16 @@ ${listaKitnets}
                     if (res.success) {
                         const isoDate = res.date;
                         // Restaurar Sincronia Google Calendar
-                        const calendarLink = await createCalendarEvent(telefoneUsuario, isoDate);
+                        const calendarResult = await createCalendarEvent(telefoneUsuario, isoDate);
 
                         // Notificar Admin
                         if (notifyAdminCallback) {
                             const leadInfo = await getLeadByPhone(telefoneUsuario);
-                            const msgAdmin = `📅 *NOVA VISITA AGENDADA!*\n👤 *Cliente:* ${nomeUsuario}\n📱 *Telefone:* ${telefoneUsuario}\n⏰ *Quando:* ${new Date(isoDate).toLocaleString('pt-BR')}\n👥 *Pessoas:* ${leadInfo?.pessoas_familia || 'Não inf.'}\n💰 *Renda:* ${leadInfo?.renda || 'Não inf.'}\n🔗 ${calendarLink || 'N/A'}`;
+                            const msgAdmin = `📅 *NOVA VISITA AGENDADA!*\n👤 *Cliente:* ${nomeUsuario}\n📱 *Telefone:* ${telefoneUsuario}\n⏰ *Quando:* ${new Date(isoDate).toLocaleString('pt-BR')}\n👥 *Pessoas:* ${leadInfo?.pessoas_familia || 'Não inf.'}\n💰 *Renda:* ${leadInfo?.renda || 'Não inf.'}\n🔗 ${calendarResult.success ? calendarResult.link : 'Erro no Calendar'}`;
                             await notifyAdminCallback(msgAdmin);
                         }
 
-                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: calendarLink ? `Sucesso! Evento criado: ${calendarLink}` : "Agendado no banco, mas falha ao criar evento no calendário." });
+                        messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: calendarResult.success ? `Sucesso! Evento criado: ${calendarResult.link}` : `Agendado no banco, mas falha ao criar evento no calendário. Motivo: ${calendarResult.error}` });
                     } else {
                         messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: `Erro ao agendar visita: ${res.error}` });
                     }

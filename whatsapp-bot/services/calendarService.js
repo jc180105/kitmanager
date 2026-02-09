@@ -90,13 +90,13 @@ async function getCalendarClient() {
  */
 async function createCalendarEvent(telefone, dataHorario) {
     const calendar = await getCalendarClient();
-    if (!calendar) return false;
+    if (!calendar) return { success: false, error: 'Falha na autenticação do Google Calendar (Credenciais ausentes ou inválidas).' };
 
     // Tentar converter para data válida
     const startDate = new Date(dataHorario);
     if (isNaN(startDate.getTime())) {
         console.error('❌ Data inválida para agendamento:', dataHorario);
-        return false;
+        return { success: false, error: 'Data inválida fornecida.' };
     }
 
     // Duração fixa de 30 min para visita
@@ -124,10 +124,10 @@ async function createCalendarEvent(telefone, dataHorario) {
         });
 
         console.log(`📅 Evento criado no Google Calendar: ${response.data.htmlLink}`);
-        return response.data.htmlLink;
+        return { success: true, link: response.data.htmlLink };
     } catch (error) {
         console.error('❌ Erro ao criar evento no Google Calendar:', error);
-        return false;
+        return { success: false, error: error.message };
     }
 }
 
