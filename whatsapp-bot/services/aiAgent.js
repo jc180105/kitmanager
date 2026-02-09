@@ -405,7 +405,15 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
         const precoFormatado = Number(precoReal).toFixed(2);
         rules.base_price = precoFormatado;
 
-        const dataAgora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        const dataAgora = new Date().toLocaleString('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
 
         let listaKitnets = '  • NENHUMA DISPONÍVEL NO MOMENTO';
         if (kitnetsLivres.length > 0) {
@@ -507,7 +515,17 @@ ${listaKitnets}
                 }
                 else if (name === 'get_free_slots') {
                     const slots = await getFreeSlotsForDay(args.data);
-                    messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: slots.length > 0 ? slots.join(', ') : "Sem horários." });
+
+                    // Calcular dia da semana para contexto da IA
+                    const [ano, mes, dia] = args.data.split('-');
+                    const dateObj = new Date(ano, mes - 1, dia);
+                    const diaSemana = dateObj.toLocaleDateString('pt-BR', { weekday: 'long' });
+
+                    const responseText = slots.length > 0
+                        ? `Horários livres para ${diaSemana}, ${args.data}: ${slots.join(', ')}`
+                        : `Sem horários livres para ${diaSemana}, ${args.data}.`;
+
+                    messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: responseText });
                 }
                 else if (name === 'schedule_visit') {
                     console.log(`🔨 Tool Call: schedule_visit para ${args.data_horario}`);
