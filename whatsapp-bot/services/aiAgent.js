@@ -378,11 +378,16 @@ async function agendarVisita(telefone, dataHorario) {
 /**
  * Gera resposta usando OpenAI + contexto do banco + Tools
  */
-async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback = null, notifyAdminCallback = null) {
+async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback = null, notifyAdminCallback = null, pushName = '') {
     try {
         // Buscar informações do usuário (Lead)
         const lead = await getLeadByPhone(telefoneUsuario);
-        const nomeUsuario = lead ? lead.nome : 'Desconhecido';
+        let nomeUsuario = lead ? lead.nome : 'Desconhecido';
+
+        // Se não tem no banco mas tem no WhatsApp Profile, usa o do Profile
+        if (nomeUsuario === 'Desconhecido' && pushName) {
+            nomeUsuario = pushName;
+        }
 
         // Buscar contexto do banco
         const kitnetsLivres = await getKitnetsDisponiveis();

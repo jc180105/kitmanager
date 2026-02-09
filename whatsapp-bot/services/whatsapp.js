@@ -198,8 +198,9 @@ async function initWhatsApp() {
 
         try {
             await sock.sendPresenceUpdate('composing', remetente);
+            const pushName = msg.pushName || '';
             // Gerar resposta com IA (passando callback de mídia e de notificação)
-            const resposta = await gerarResposta(textoMensagem, remetente, sendMedia, notifyAdmin);
+            const resposta = await gerarResposta(textoMensagem, remetente, sendMedia, notifyAdmin, pushName);
 
             if (resposta) {
                 await sock.sendMessage(remetente, { text: resposta });
