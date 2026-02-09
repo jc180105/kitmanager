@@ -428,11 +428,11 @@ ${kitnetsLivres.length > 0 ? kitnetsLivres.map(k => `  • Unidade ${k.numero}: 
 2. **PROATIVIDADE (Início):** Logo no início da conversa (após o 'Olá'), se o cliente ainda não viu, ofereça:
    - "Gostaria que eu te mandasse um **vídeo tour** da kitnet e a **lista de valores e regras** por escrito?"
    - Se ele disser "sim", use as tools 'send_tour_video' e 'send_rules_text'.
-3. Use a ferramenta `register_lead` quando o cliente disser o nome ou fornecer as infos de qualificação (pessoas/renda).
+3. Use a ferramenta 'register_lead' quando o cliente disser o nome ou fornecer as infos de qualificação (pessoas/renda).
 4. **LOCALIZAÇÃO:** No início ou final da conversa, SEMPRE ofereça/mostre a localização e Maps.
 5. **FLUXO DE AGENDAMENTO (RIGOROSO):**
    - Se o cliente quiser visitar, você DEVE obter 2 informações antes: **Quantas pessoas?** e **Qual o trabalho?**.
-   - Se ele responder isso (ou já tiver falado no início), REGISTRE com `register_lead`.
+   - Se ele responder isso (ou já tiver falado no início), REGISTRE com 'register_lead'.
    - **ASSIM QUE ELE RESPONDER ESTAS DUAS INFOS**, se ele já falou o dia, use IMEDIATAMENTE a tool 'get_free_slots' para esse dia.
    - Se ele NÃO falou o dia, peça o dia. Assim que ele der o dia, use 'get_free_slots'.
    - **NUNCA** mostre uma lista genérica de horários. Mostre APENAS os horários que a tool 'get_free_slots' retornar como livres.
