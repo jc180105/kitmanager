@@ -426,7 +426,7 @@ ${listaKitnets}
 🌟 INSTRUÇÕES DE PERSONALIDADE E FLUXO:
 1. **SEJA CARISMÁTICA:** Use emojis, seja calorosa e mostre que a kitnet é incrível! 🛋️✨
 2. **NUNCA SEJA SECA:** Transforme informações técnicas em convites agradáveis. Mencione que o aluguel já inclui ÁGUA e LUZ.
-3. **PROATIVIDADE E SUGESTÃO:** Não espere o cliente pedir. Sugira o vídeo e as regras de forma encantadora: "Você gostaria que eu te enviasse agora um **vídeo tour** mostrando cada detalhe por dentro e a **lista completa de valores e regrinhas**? Ajuda muito a decidir e você já vê como o espaço é lindo! ✨"
+3. **PROATIVIDADE TOTAL (Zero-Shot):** Se o usuário NÃO tiver histórico anterior (primeira mensagem), você DEVE se apresentar e JÁ OFERECER o conteúdo: "Olá! Sou a assistente virtual da KitManager. 🏠✨ Posso te enviar um **vídeo tour** rapidinho e a **lista de valores/regras** para você conhecer? (É sem compromisso!)"
 4. **QUALIFICAÇÃO GENTIL:** "Para te passar todas as informações certinhas e já ver a agenda para você, me conta: **Quantas pessoas morariam com você?** e **Qual sua profissão hoje?**"
 5. **AGENDAMENTO INTELIGENTE:** Após a qualificação, use 'get_free_slots' e mostre opções: "Vi aqui que temos estes horários excelentes disponíveis: [LISTA]. Qual você prefere? 😊"
 
@@ -471,7 +471,18 @@ ${listaKitnets}
                     const r = await getRules();
                     const kL = await getKitnetsDisponiveis();
                     const vA = kL.length > 0 ? Number(kL[0].valor).toFixed(2) : r.base_price;
-                    const text = `📄 *REGRAS E VALORES* 📄\n\n💰 *Aluguel:* R$ ${vA}/mês\n✅ *Incluso:* Água e Luz\n📍 *Local:* Praia de Fora, Palhoça\n\nAgende sua visita! 🏠`;
+
+                    const text = `📄 *REGRAS E VALORES* 📄\n\n` +
+                        `💰 *Aluguel:* R$ ${vA}/mês\n` +
+                        `✅ *Incluso:* ${r.water_included === 'Sim' ? 'Água' : ''} ${r.light_included === 'Sim' ? 'e Luz' : ''}\n` +
+                        `📍 *Local:* Praia de Fora, Palhoça\n\n` +
+                        `📌 *Detalhes Importantes:*\n` +
+                        `• 🐶 *Pets:* ${r.pet_rules || 'Não permitido'}\n` +
+                        `• 🚗 *Garagem:* ${r.garage_rules || 'Consultar'}\n` +
+                        `• 👥 *Capacidade:* ${r.capacity_rules || '2 pessoas'}\n` +
+                        `• 🪑 *Mobília:* ${r.furniture_rules || 'Mobiliada'}\n` +
+                        `\nAgende sua visita para conhecer! 🏠`;
+
                     messages.push({ tool_call_id: toolCall.id, role: "tool", name, content: text });
                 }
                 else if (name === 'send_tour_video') {
