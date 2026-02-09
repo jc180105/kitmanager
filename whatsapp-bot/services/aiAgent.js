@@ -5,6 +5,9 @@ const path = require('path');
 const os = require('os');
 
 // Inicializar OpenAI (se houver chave)
+const hasKey = !!process.env.OPENAI_API_KEY;
+console.log(`🔑 OpenAI Key Configurada? ${hasKey ? 'SIM' : 'NÃO'}`);
+
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 }) : null;
@@ -516,15 +519,17 @@ ${listaKitnets}
         return finalResponseText;
 
     } catch (error) {
-        console.error('❌ Erro no fluxo AI:', error.message);
+        console.error('❌ Erro no fluxo AI:', error);
+
+        const errorMessage = error.response?.data?.error?.message || error.message;
 
         // Fallback Charmoso
         const kitnets = await getKitnetsDisponiveis();
         if (kitnets.length > 0) {
             const v = Number(kitnets[0].valor).toFixed(2);
-            return `Olá! ✨ No momento a minha inteligência está passando por uma manutenção rápida, mas já te adianto: temos unidades maravilhosas por R$ ${v}/mês (já com água e luz incluso!). 🏠\n\nQue tal agendarmos uma visita para você conhecer?`;
+            return `Olá! ✨ No momento a minha inteligência está passando por uma manutenção rápida (Diagnóstico: ${errorMessage}), mas já te adianto: temos unidades maravilhosas por R$ ${v}/mês (já com água e luz incluso!). 🏠\n\nQue tal agendarmos uma visita para você conhecer?`;
         }
-        return 'Olá! ✨ No momento estamos sem unidades livres, mas posso anotar seu contato para te avisar assim que surgir uma vaga! Qual o seu nome?';
+        return `Olá! ✨ No momento estamos sem unidades livres. (Erro AI: ${errorMessage})`;
     }
 }
 
