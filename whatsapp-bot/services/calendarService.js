@@ -12,15 +12,31 @@ async function getCalendarClient() {
     if (calendarClient) return calendarClient;
 
     // 1. Tentar Environment Variable (Produção no Railway)
-    if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    let envJson = process.env.GOOGLE_CREDENTIALS_JSON;
+    if (envJson) {
         try {
             console.log('🔑 Usando credenciais via variável de ambiente (GOOGLE_CREDENTIALS_JSON)...');
-            const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
 
-            // Fix: Ensure private_key has real newlines instead of string literals "\n"
-            // This is a common issue when pasting JSON into Environment Variables
+            // Caso a env tenha sido salva com aspas extras acidentais no início/fim
+            envJson = envJson.trim();
+            if (envJson.startsWith('"') && envJson.endsWith('"')) {
+                envJson = envJson.slice(1, -1);
+            }
+
+            const credentials = JSON.parse(envJson);
+
+            // Fix: Reemplazo robusto de saltos de línea
             if (credentials.private_key) {
-                credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+                // Remove literal \n and replace with real newlines, then trim
+                credentials.private_key = credentials.private_key
+                    .replace(/\\n/g, '\n')
+                    .replace(/\n\s+/g, '\n'); // remove extra spaces after newlines
+
+                if (!credentials.private_key.includes('BEGIN PRIVATE KEY')) {
+                    console.error('❌ Chave privada parece estar mal formatada (falta BEGIN/END header)');
+                } else {
+                    console.log('✅ Formato do header da chave validado.');
+                }
             }
 
             const auth = new google.auth.GoogleAuth({
@@ -29,7 +45,7 @@ async function getCalendarClient() {
             });
 
             calendarClient = google.calendar({ version: 'v3', auth });
-            console.log('✅ Cliente Google Calendar autenticado via ENV.');
+            console.log('✅ Cliente Google Calendar inicializado (autenticação será validada na primeira chamada).');
             return calendarClient;
         } catch (error) {
             console.error('❌ Erro ao ler GOOGLE_CREDENTIALS_JSON:', error.message);
