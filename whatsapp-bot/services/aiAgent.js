@@ -400,6 +400,7 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
         let contexto = `Você é um assistente virtual de aluguel de kitnets.
         
 📍 DADOS DO SISTEMA:
+- Data Atual: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
 - Unidades livres: ${kitnetsLivres.length > 0 ? 'SIM' : 'NÃO'}
 - Cliente atual: ${nomeUsuario} (${telefoneUsuario})
 - Endereço: R. Porto Reis, 125 - Praia de Fora, Palhoça (https://maps.app.goo.gl/wYwVUsGdTAFPSoS79)
