@@ -253,8 +253,8 @@ async function getRules() {
             light_included: 'Sim',
             garage_rules: 'Apenas Moto',
             pet_rules: 'Não aceita pets',
-            capacity_rules: 'Máximo 2 pessoas. Sem crianças.',
-            furniture_rules: 'Mobiliada',
+            capacity_rules: 'Máximo 2 pessoas. Sem crianças. (Acrescimo de R$ 50,00 para 2ª pessoa)',
+            furniture_rules: 'Semi mobiliada (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)',
             laundry_rules: 'Com lavanderia'
         };
     }
