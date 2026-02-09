@@ -220,22 +220,14 @@ async function getRules() {
 
         // Default fallbacks if db is empty
         return {
-            base_price: rules.base_price || '500.00',
+            base_price: rules.base_price || '850.00',
             deposit_value: rules.deposit_value || '450.00',
-            contract_months: rules.contract_months || '6',
-            wifi_included: rules.wifi_included || 'Não (contratar à parte)',
-            water_included: rules.water_included || 'Sim',
-            light_included: rules.light_included || 'Sim',
-            garage_rules: rules.garage_rules || 'Apenas MOTO (não tem carro)',
-            pet_rules: rules.pet_rules || 'Não aceitamos animais',
-            capacity_rules: rules.capacity_rules || 'Máximo 2 pessoas (Ideal 1). Sem crianças.',
-            furniture_rules: rules.furniture_rules || '100% mobiliadas (Cama, Geladeira, Fogão, Mesa, Guarda-roupa)',
-            laundry_rules: rules.laundry_rules || 'Espaço e conexão para máquina na própria kitnet'
+            ...rules
         };
     } catch (error) {
         console.error('Erro ao buscar regras:', error);
         return {
-            base_price: '500.00',
+            base_price: '850.00',
             deposit_value: '450.00',
             contract_months: '6',
             wifi_included: 'Não',
@@ -391,11 +383,18 @@ async function gerarResposta(mensagemUsuario, telefoneUsuario, sendMediaCallback
 
         // Buscar contexto do banco
         const kitnetsLivres = await getKitnetsDisponiveis();
-        const precoReferencia = kitnetsLivres.length > 0 ? kitnetsLivres[0].valor : await getPrecoReferencia();
-        const precoFormatado = Number(precoReferencia).toFixed(2);
-
-        // Buscar regras dinâmicas
         const rules = await getRules();
+
+        // Lógica de Preço Dinâmico: 
+        // 1. Tenta pegar o valor de uma kitnet livre
+        // 2. Senão, tenta o getPrecoReferencia (qualquer kitnet)
+        // 3. Por fim, usa o base_price das rules
+        const precoReferencia = kitnetsLivres.length > 0 ? kitnetsLivres[0].valor : await getPrecoReferencia();
+        const precoReal = (precoReferencia && precoReferencia > 0) ? precoReferencia : rules.base_price;
+        const precoFormatado = Number(precoReal).toFixed(2);
+
+        // Sincronizar precoFormatado de volta no rules para a IA usar o valor real nas regras
+        rules.base_price = precoFormatado;
 
         // Montar contexto para a IA
         let contexto = `Você é um assistente virtual de aluguel de kitnets.

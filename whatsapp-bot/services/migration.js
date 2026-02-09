@@ -32,7 +32,7 @@ async function runMigrations() {
 
         // Insert default values if not exists
         const defaultRules = [
-            { key: 'base_price', value: '500.00' },
+            { key: 'base_price', value: '850.00' },
             { key: 'deposit_value', value: '450.00' },
             { key: 'contract_months', value: '6' },
             { key: 'wifi_included', value: 'Não (contratar à parte)' },
