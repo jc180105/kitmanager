@@ -7,6 +7,7 @@ import {
 import { toast } from 'sonner';
 import { api } from '../utils/api';
 import { generateContract } from '../utils/generateContract';
+import PaymentConfirmDialog from '../components/PaymentConfirmDialog';
 
 export default function KitnetDetails() {
     const { id } = useParams();
