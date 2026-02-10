@@ -112,7 +112,16 @@ router.put('/:id/status', async (req, res) => {
         }
 
         const kitnet = current.rows[0];
-        const novoStatus = kitnet.status === 'livre' ? 'alugada' : 'livre';
+        let novoStatus = req.body.status;
+
+        if (novoStatus) {
+            if (!['livre', 'alugada'].includes(novoStatus)) {
+                return res.status(400).json({ error: 'Status inválido' });
+            }
+        } else {
+            // Toggle se não for enviado
+            novoStatus = kitnet.status === 'livre' ? 'alugada' : 'livre';
+        }
 
         let updateQuery, updateParams;
         if (novoStatus === 'livre') {

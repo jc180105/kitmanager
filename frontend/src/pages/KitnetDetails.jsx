@@ -15,7 +15,9 @@ export default function KitnetDetails() {
     const [kitnet, setKitnet] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+
     const [loadingHistory, setLoadingHistory] = useState(true);
+    const [paymentDialog, setPaymentDialog] = useState(null);
 
     useEffect(() => {
         fetchKitnet();
@@ -53,13 +55,34 @@ export default function KitnetDetails() {
         }
     };
 
-    const togglePayment = async () => {
+    const togglePayment = () => {
+        // Se já está pago, apenas alterna para não pago sem perguntar
+        if (kitnet.pago_mes) {
+            executeTogglePayment();
+            return;
+        }
+
+        // Se vai pagar, abre o diálogo de confirmação
+        setPaymentDialog({
+            title: 'Confirmar Pagamento',
+            message: `Registrar pagamento da Kitnet ${kitnet.numero}?`,
+            onConfirm: (method) => executeTogglePayment(method),
+        });
+    };
+
+    const executeTogglePayment = async (formaPagamento = null) => {
+        setPaymentDialog(null);
         try {
-            const response = await api.put(`/kitnets/${id}/pagamento`);
+            const response = await api.put(`/kitnets/${id}/pagamento`, { forma_pagamento: formaPagamento });
             if (!response.ok) throw new Error('Erro ao atualizar pagamento');
             const updated = await response.json();
             setKitnet(updated);
             fetchHistory();
+            if (formaPagamento) {
+                toast.success(`Pagamento registrado via ${formaPagamento}!`);
+            } else {
+                toast.success('Status de pagamento atualizado!');
+            }
         } catch (error) {
             toast.error(error.message);
         }
@@ -298,6 +321,12 @@ export default function KitnetDetails() {
                     )}
                 </div>
             </div>
+            {paymentDialog && (
+                <PaymentConfirmDialog
+                    {...paymentDialog}
+                    onCancel={() => setPaymentDialog(null)}
+                />
+            )}
         </div>
     );
 }

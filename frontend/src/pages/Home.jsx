@@ -142,7 +142,7 @@ export default function Home() {
         ));
 
         try {
-            const response = await api.put(`/kitnets/${id}/status`);
+            const response = await api.put(`/kitnets/${id}/status`, { status: newStatus });
 
             if (!response.ok) {
                 const err = await response.json();
