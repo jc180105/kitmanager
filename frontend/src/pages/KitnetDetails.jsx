@@ -7,7 +7,6 @@ import {
 import { toast } from 'sonner';
 import { api } from '../utils/api';
 import { generateContract } from '../utils/generateContract';
-import PaymentConfirmDialog from '../components/PaymentConfirmDialog';
 
 export default function KitnetDetails() {
     const { id } = useParams();
@@ -18,7 +17,7 @@ export default function KitnetDetails() {
     const [loading, setLoading] = useState(true);
 
     const [loadingHistory, setLoadingHistory] = useState(true);
-    const [paymentDialog, setPaymentDialog] = useState(null);
+
 
     useEffect(() => {
         fetchKitnet();
@@ -63,16 +62,11 @@ export default function KitnetDetails() {
             return;
         }
 
-        // Se vai pagar, abre o diálogo de confirmação
-        setPaymentDialog({
-            title: 'Confirmar Pagamento',
-            message: `Registrar pagamento da Kitnet ${kitnet.numero}?`,
-            onConfirm: (method) => executeTogglePayment(method),
-        });
+        // Se vai pagar, navega para a página de pagamento
+        navigate(`/kitnet/${id}/pagamento`);
     };
 
     const executeTogglePayment = async (formaPagamento = null) => {
-        setPaymentDialog(null);
         try {
             const response = await api.put(`/kitnets/${id}/pagamento`, { forma_pagamento: formaPagamento });
             if (!response.ok) throw new Error('Erro ao atualizar pagamento');
@@ -322,12 +316,7 @@ export default function KitnetDetails() {
                     )}
                 </div>
             </div>
-            {paymentDialog && (
-                <PaymentConfirmDialog
-                    {...paymentDialog}
-                    onCancel={() => setPaymentDialog(null)}
-                />
-            )}
+
         </div>
     );
 }
