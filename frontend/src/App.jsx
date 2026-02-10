@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
+import OfflineIndicator from './components/OfflineIndicator';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 
@@ -38,37 +40,41 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Public Route */}
-            <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <OfflineIndicator />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public Route */}
+              <Route path="/login" element={<Login />} />
 
-            {/* Protected Routes */}
-            <Route path="/" element={
-              <PrivateRoute>
-                <Layout />
-              </PrivateRoute>
-            }>
-              <Route index element={<Home />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="history" element={<HistoryPage />} />
-              <Route path="menu" element={<MenuPage />} />
-              <Route path="kitnet/:id" element={<KitnetDetails />} />
-              <Route path="kitnet/:id/inquilino" element={<KitnetTenant />} />
-              <Route path="kitnet/:id/pagamento" element={<KitnetPayment />} />
-              <Route path="kitnet/:id/editar" element={<KitnetEdit />} />
-              <Route path="config" element={<Configuration />} />
-              <Route path="whatsapp" element={<WhatsAppConfig />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="pagamento/:id" element={<PaymentReceipt />} />
-            </Route>
-          </Routes>
-        </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
+              {/* Protected Routes */}
+              <Route path="/" element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }>
+                <Route index element={<Home />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="history" element={<HistoryPage />} />
+                <Route path="menu" element={<MenuPage />} />
+                <Route path="kitnet/:id" element={<KitnetDetails />} />
+                <Route path="kitnet/:id/inquilino" element={<KitnetTenant />} />
+                <Route path="kitnet/:id/pagamento" element={<KitnetPayment />} />
+                <Route path="kitnet/:id/editar" element={<KitnetEdit />} />
+                <Route path="config" element={<Configuration />} />
+                <Route path="whatsapp" element={<WhatsAppConfig />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="pagamento/:id" element={<PaymentReceipt />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
 export default App;
+

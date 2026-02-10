@@ -89,33 +89,51 @@ export default function Home() {
     }, [fetchKitnets]);
 
     // Pull to Refresh Logic
+    const [isPulling, setIsPulling] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
     useEffect(() => {
         let startY = 0;
 
         const handleTouchStart = (e) => {
-            startY = e.touches[0].clientY;
+            if (window.scrollY === 0) {
+                startY = e.touches[0].clientY;
+            }
         };
 
-        const handleTouchEnd = (e) => {
+        const handleTouchMove = (e) => {
+            if (window.scrollY === 0 && startY > 0) {
+                const pullDistance = e.touches[0].clientY - startY;
+                if (pullDistance > 60) {
+                    setIsPulling(true);
+                }
+            }
+        };
+
+        const handleTouchEnd = async (e) => {
             const endY = e.changedTouches[0].clientY;
             const pullDistance = endY - startY;
+            startY = 0;
+            setIsPulling(false);
 
-            if (window.scrollY === 0 && pullDistance > 150) {
-                // Prevent duplicate refresh if already loading? 
-                // But fetchKitnets handles loading state visually.
+            if (window.scrollY === 0 && pullDistance > 100 && !isRefreshing) {
+                setIsRefreshing(true);
                 triggerHaptic('success');
-                fetchKitnets();
+                await fetchKitnets();
+                setIsRefreshing(false);
             }
         };
 
         document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchmove', handleTouchMove, { passive: true });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
 
         return () => {
             document.removeEventListener('touchstart', handleTouchStart);
+            document.removeEventListener('touchmove', handleTouchMove);
             document.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [fetchKitnets]);
+    }, [fetchKitnets, isRefreshing]);
 
     // Toggle status with confirmation
     const handleToggleClick = (kitnet) => {
@@ -253,6 +271,18 @@ export default function Home() {
 
     return (
         <div className="animate-fade-in pb-20 md:pb-0">
+
+            {/* Pull to Refresh Indicator */}
+            {(isPulling || isRefreshing) && (
+                <div className="flex justify-center py-3 -mt-2 mb-2 animate-fade-in">
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-800/80 rounded-full border border-slate-700/50">
+                        <RefreshCw className={`w-4 h-4 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span className="text-xs text-slate-300">
+                            {isRefreshing ? 'Atualizando...' : 'Solte para atualizar'}
+                        </span>
+                    </div>
+                </div>
+            )}
 
             {/* Top Controls: Search, Filters, and Quick Actions */}
             <div className="flex flex-col gap-4 mb-6">
