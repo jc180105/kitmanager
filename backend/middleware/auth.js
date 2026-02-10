@@ -18,8 +18,11 @@ const authorize = (req, res, next) => {
 
     try {
         // 3. Verify token
-        // Use a default secret for dev if not provided (BUT warn about it)
-        const secret = process.env.JWT_SECRET || 'dev_secret_key_change_in_production';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            console.error('❌ JWT_SECRET não configurado!');
+            return res.status(500).json({ error: 'Erro de configuração do servidor.' });
+        }
 
         const decoded = jwt.verify(token, secret);
         req.user = decoded; // Attach user info to request

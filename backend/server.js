@@ -106,18 +106,19 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      // In dev, sometimes we want to be lax, but for security remediation we should be strict.
-      // However, to avoid breaking "checking" from random places, we might warn.
-      // For now, let's allow it but log it? No, implemented plan says restrict.
-      // Let's stick to the list.
-      return callback(null, true); // Temporarily allow ALL for ease of transition, but we should restrict later.
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    console.warn(`⚠️ CORS bloqueou origem: ${origin}`);
+    return callback(new Error('Não permitido pelo CORS'), false);
   }
 }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Initialize database tables and scheduler
+initDb();
+initScheduler();
 
 // Public Routes
 app.use('/auth', authRoutes);

@@ -1,12 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+
+// Rate limit: max 5 login attempts per 15 minutes
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // POST /auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     try {
         const { password } = req.body;
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'; // Fallback for dev
+        const adminPassword = process.env.ADMIN_PASSWORD;
+
+        if (!adminPassword) {
+            console.error('❌ ADMIN_PASSWORD não configurada nas variáveis de ambiente!');
+            return res.status(500).json({ error: 'Erro de configuração do servidor.' });
+        }
 
         // Simple password check
         if (password !== adminPassword) {
@@ -14,13 +29,16 @@ router.post('/login', async (req, res) => {
         }
 
         // Generate Long-Lived Token (1 Year)
-        // This satisfies the "Login Once" requirement
-        const secret = process.env.JWT_SECRET || 'dev_secret_key_change_in_production';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            console.error('❌ JWT_SECRET não configurado nas variáveis de ambiente!');
+            return res.status(500).json({ error: 'Erro de configuração do servidor.' });
+        }
 
         const token = jwt.sign(
             { role: 'admin', user: 'admin' },
             secret,
-            { expiresIn: '365d' } // 1 Year validity
+            { expiresIn: '30d' } // 30 days validity
         );
 
         console.log('🔑 Login de administrador realizado com sucesso via App/Web');
@@ -49,7 +67,8 @@ router.get('/validate', (req, res) => {
     if (!token) return res.status(401).json({ valid: false });
 
     try {
-        const secret = process.env.JWT_SECRET || 'dev_secret_key_change_in_production';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) return res.status(500).json({ valid: false });
         jwt.verify(token, secret);
         res.json({ valid: true });
     } catch (e) {
