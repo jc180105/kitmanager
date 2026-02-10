@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Home as HomeIcon, RefreshCw, Search, X, ChevronDown, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import KitnetCard from '../components/KitnetCard';
 import EditModal from '../components/EditModal';
 import PaymentHistoryModal from '../components/PaymentHistoryModal';
-import PaymentConfirmDialog from '../components/PaymentConfirmDialog';
+
 import ConfirmDialog from '../components/ConfirmDialog';
 import KitnetSkeleton from '../components/KitnetSkeleton';
 import ExportButton from '../components/ExportButton';
@@ -13,12 +14,12 @@ import WhatsAppButton from '../components/WhatsAppButton';
 import { api } from '../utils/api';
 
 export default function Home() {
+    const navigate = useNavigate();
     const [kitnets, setKitnets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingKitnet, setEditingKitnet] = useState(null);
     const [historyKitnet, setHistoryKitnet] = useState(null);
     const [confirmDialog, setConfirmDialog] = useState(null);
-    const [paymentDialog, setPaymentDialog] = useState(null);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -226,36 +227,17 @@ export default function Home() {
         const kitnet = kitnets.find(k => k.id === id);
         if (!kitnet) return;
 
-        // Se já está pago, apenas alterna para não pago sem perguntar forma de pagamento
+        // Se já está pago, apenas alterna para não pago
         if (kitnet.pago_mes) {
             executeTogglePayment(id);
             return;
         }
 
-        // Calculate position if event is provided
-        let triggerRect = null;
-        if (e && e.currentTarget) {
-            const rect = e.currentTarget.getBoundingClientRect();
-            triggerRect = {
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: rect.width,
-                height: rect.height
-            };
-        }
-
-        // Se vai pagar, pergunta a forma
-        triggerHaptic('medium');
-        setPaymentDialog({
-            title: 'Confirmar Pagamento',
-            message: `Registrar pagamento da Kitnet ${kitnet.numero}?`,
-            onConfirm: (method) => executeTogglePayment(id, method),
-            triggerRect // Pass the calculated position
-        });
+        // Se vai pagar, navega para a página de pagamento
+        navigate(`/kitnet/${id}/pagamento`);
     };
 
     const executeTogglePayment = async (id, formaPagamento = null) => {
-        setPaymentDialog(null);
         triggerHaptic('medium');
         try {
             const response = await api.put(`/kitnets/${id}/pagamento`, { forma_pagamento: formaPagamento });
@@ -463,12 +445,7 @@ export default function Home() {
                 />
             )}
 
-            {paymentDialog && (
-                <PaymentConfirmDialog
-                    {...paymentDialog}
-                    onCancel={() => setPaymentDialog(null)}
-                />
-            )}
+
 
         </div>
     );
