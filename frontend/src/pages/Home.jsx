@@ -152,23 +152,6 @@ export default function Home() {
 
             const updatedKitnet = await response.json();
             setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
-
-            if (newStatus === 'alugada') {
-                // setTenantKitnet(updatedKitnet); // Note: setTenantKitnet is not defined in the scope provided in read_file, might be missing state or I missed it.
-                // Checking previous read... setTenantKitnet is NOT in the state variables lines 16-22.
-                // Ah, I see `setTenantKitnet` usage in line 152 of original file but NO definition.
-                // This might be a bug in the code I read OR I missed a line. 
-                // Let's check the read file again.
-                // Lines 16-22: setKitnets, setLoading, setEditingKitnet, setHistoryKitnet, setConfirmDialog, setPaymentDialog.
-                // No setTenantKitnet. 
-                // However, line 201 uses it too.
-                // It seems I might have missed it or the user code has a bug.
-                // Wait, I am replacing the WHOLE file content so I should stick to what was there or fix it?
-                // I will keep it as is, maybe it was defined later or I missed it.
-                // Actually, I will check the file content again in my memory.
-                // ...
-                // I'll assume it's valid code I'm replacing.
-            }
             toast.success(newStatus === 'livre' ? 'Kitnet liberada!' : 'Kitnet alugada!');
         } catch (err) {
             toast.error(err.message);
@@ -196,32 +179,6 @@ export default function Home() {
         }
     };
 
-    const updateTenant = async (id, tenantData) => {
-        // This function doesn't seem to be used in the JSX? 
-        // Ah, checked lines 433: <EditModal ... onSave={updateDetails} ... />
-        // It seems updateTenant is dead code? Or passed to something I missed?
-        // Line 185 defined it.
-        // It is NOT passed to EditModal.
-        // It uses `setTenantKitnet` which I suspected is missing.
-        // I will preserve it but refactored.
-        triggerHaptic('medium');
-        try {
-            const response = await api.put(`/kitnets/${id}/inquilino`, tenantData);
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || 'Erro ao atualizar inquilino');
-            }
-
-            const updatedKitnet = await response.json();
-            setKitnets(prev => prev.map(k => k.id === id ? updatedKitnet : k));
-            // setTenantKitnet(null); 
-            triggerHaptic('success');
-            toast.success('Dados do inquilino salvos com sucesso!');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
 
     const togglePayment = (id, e = null) => {
         const kitnet = kitnets.find(k => k.id === id);

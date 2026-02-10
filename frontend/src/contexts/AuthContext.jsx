@@ -16,17 +16,21 @@ export const AuthProvider = ({ children }) => {
             }
 
             try {
-                // Optional: Validate token with backend
-                // For now, we trust existence + decoding (or basic fetch check later)
-                // Let's do a quick verify call if we want to be strict, 
-                // OR just trust it until a 401 happens (Optimistic).
-                // Given "Login Once" requirement, we want to be persistent.
+                const response = await fetch(`${API_URL}/auth/validate`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-                // Let's assume valid and let api.js handle 401s
-                setUser({ role: 'admin' }); // Mock user object for now
+                if (response.ok) {
+                    setUser({ role: 'admin' });
+                } else {
+                    // Token inválido ou expirado
+                    console.warn('Token inválido, fazendo logout...');
+                    logout();
+                }
             } catch (error) {
-                console.error("Token invalid", error);
-                logout();
+                // Sem conexão: manter logado (otimista)
+                console.warn('Não foi possível validar token (offline?):', error.message);
+                setUser({ role: 'admin' });
             } finally {
                 setLoading(false);
             }
